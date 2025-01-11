@@ -5,6 +5,9 @@ using System.Collections.Generic;
 [AddComponentMenu("Chuvi/Line/XLinePathSubLine")]
 public class XLinePathSubLine : MonoBehaviour
 {
+
+    public delegate void XLinePathSubLineChange(XLinePathSubLine subline);
+    public event XLinePathSubLineChange OnLineChanged;
 #if UNITY_EDITOR
     public bool inEditorClickModeOn = false; 
     public virtual bool InEditorShowGizmos
@@ -12,7 +15,7 @@ public class XLinePathSubLine : MonoBehaviour
         get
         {
             if (Parent == null) return false;
-            return Parent.inEditorShowGizmos;
+            return Parent.editor_inEditorShowGizmos;
         }
     }
 #endif
@@ -50,14 +53,14 @@ public class XLinePathSubLine : MonoBehaviour
 
             if (recalcSegments ||
 #if UNITY_EDITOR
-        parentPrecision != parent.Precision || 
+        parentPrecision != parent.editor_Precision || 
 #endif
                 _segments == null)
             {
                 //CorrectPivot();
                 if (parent == null) parent = GetComponentInParent<XLinePath>();
 #if UNITY_EDITOR 
-                parentPrecision = parent.Precision; 
+                parentPrecision = parent.editor_Precision; 
 #endif
                 _length = 0;
                 _segments = new XLinePathSegment[IsClosed ? points.Length : points.Length - 1];
@@ -91,7 +94,16 @@ public class XLinePathSubLine : MonoBehaviour
     }
     protected XLinePathSegment[] _segments;
     protected XLinePathPoint[] points;
-    protected bool recalcSegments = true;
+    protected bool _recalcSegments = true;
+    protected bool recalcSegments
+    {
+        get => _recalcSegments;
+        set
+        {
+            if (_recalcSegments == value) return;
+            _recalcSegments = value;
+        }
+    }
 
     public bool IsDirty { get { return recalcSegments; } }
 
@@ -161,10 +173,10 @@ public class XLinePathSubLine : MonoBehaviour
 
     public virtual void Recalculate()
     {
-        if (parent == null) parent = GetComponentInParent<XLinePath>();
+        if (parent == null) parent = GetComponentInParent<XLinePath>(true);
         points = GetComponentsInChildren<XLinePathPoint>();
 #if UNITY_EDITOR
-        parentPrecision = parent.Precision; 
+        parentPrecision = parent.editor_Precision; 
 #endif
         _length = 0;
         _segments = new XLinePathSegment[IsClosed ? points.Length : points.Length - 1];
@@ -257,7 +269,7 @@ public class XLinePathSubLine : MonoBehaviour
         }
         return Segments[Segments.Length - 1].GetInterpolatedPoint(1, Force2D);
     }
-    public void GetInterpolatedValues(float dist, out Vector3 pos, out Vector3 vel, out Vector3 acc, out Vector3 up)
+    public float GetInterpolatedValues(float dist, out Vector3 pos, out Vector3 vel, out Vector3 acc, out Vector3 up)
     {
         if (recalcSegments)
         {
@@ -265,11 +277,12 @@ public class XLinePathSubLine : MonoBehaviour
         }
         float prevlen = 0f;
         float len = 0f;
-        while (dist >= Length)
-            dist -= Length;
+        //while (dist >= Length)
+        //    dist -= Length;
 
-        while (dist < 0)
-            dist += Length;
+        //while (dist < 0)
+        //    dist += Length;
+        dist = Mathf.Repeat(dist, Length);
 
 
         for (int i = 0; i < Segments.Length; i++)
@@ -282,13 +295,14 @@ public class XLinePathSubLine : MonoBehaviour
                 float t = (dist - prevlen) / Segments[i].length;
 
                 Segments[i].GetInterpolatedValues(t, Force2D, out pos, out vel, out acc, out up);
-                return;
+                return dist;
             }
         }
         Segments[Segments.Length - 1].GetInterpolatedValues(1, Force2D, out pos, out vel, out acc, out up);
+        return dist;
     }
 
-    public void GetInterpolatedValues(float dist, out Vector3 pos, out Vector3 vel, out Vector3 acc)
+    public float GetInterpolatedValues(float dist, out Vector3 pos, out Vector3 vel, out Vector3 acc)
     {
         if (recalcSegments)
         {
@@ -296,11 +310,12 @@ public class XLinePathSubLine : MonoBehaviour
         }
         float prevlen = 0f;
         float len = 0f;
-        while (dist >= Length)
-            dist -= Length;
+        //while (dist >= Length)
+        //    dist -= Length;
 
-        while (dist < 0)
-            dist += Length;
+        //while (dist < 0)
+        //    dist += Length;
+        dist = Mathf.Repeat(dist, Length);
 
 
         for (int i = 0; i < Segments.Length; i++)
@@ -313,13 +328,14 @@ public class XLinePathSubLine : MonoBehaviour
                 float t = (dist - prevlen) / Segments[i].length;
 
                 Segments[i].GetInterpolatedValues(t, Force2D, out pos, out vel, out acc);
-                return;
+                return dist;
             }
         }
         Segments[Segments.Length - 1].GetInterpolatedValues(1, Force2D, out pos, out vel, out acc);
+        return dist;
     }
 
-    public void GetInterpolatedValues(float dist, out Vector3 pos, out Vector3 vel)
+    public float GetInterpolatedValues(float dist, out Vector3 pos, out Vector3 vel)
     {
         if (recalcSegments)
         {
@@ -328,15 +344,12 @@ public class XLinePathSubLine : MonoBehaviour
         float prevlen = 0f;
         float len = 0f;
 
-        while (dist >= Length)
-        {
-            dist -= Length;
-        }
+        //while (dist >= Length)
+        //    dist -= Length;
 
-        while (dist < 0)
-        {
-            dist += Length;
-        }
+        //while (dist < 0)
+        //    dist += Length;
+        dist = Mathf.Repeat(dist, Length);
 
 
         for (int i = 0; i < Segments.Length; i++)
@@ -349,10 +362,11 @@ public class XLinePathSubLine : MonoBehaviour
                 float t = (dist - prevlen) / Segments[i].length;
 
                 Segments[i].GetInterpolatedValues(t, Force2D, out pos, out vel);
-                return;
+                return dist;
             }
         }
         Segments[Segments.Length - 1].GetInterpolatedValues(1, Force2D, out pos, out vel);
+        return dist;
     }
 
     public Vector3[] GetCurvePoints()
@@ -362,7 +376,7 @@ public class XLinePathSubLine : MonoBehaviour
 
         if (parent == null) parent = GetComponentInParent<XLinePath>();
 #if UNITY_EDITOR
-        int steps = Segments.Length * parent.Precision;
+        int steps = Segments.Length * parent.editor_Precision;
 #else
         int steps = Segments.Length * 50; 
 #endif
@@ -699,6 +713,13 @@ public class XLinePathSubLine : MonoBehaviour
     public void SetDirty()
     {
         recalcSegments = true;
+        OnLineChanged?.Invoke(this);
+        ((IXLinePath)parent).OnSubLineChanged(this);
+    }
+
+    private void OnTransformChildrenChanged()
+    {
+        SetDirty();
     }
 
 

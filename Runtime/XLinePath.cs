@@ -4,8 +4,10 @@ using System.Collections.Generic;
 
 [ExecuteInEditMode]
 [AddComponentMenu("Chuvi/Line/XLinePath")]
-public class XLinePath : MonoBehaviour
+public class XLinePath : MonoBehaviour, IXLinePath
 {
+    public delegate void XLinePathChange(int sublineIndex, XLinePathSubLine subline);
+    public event XLinePathChange OnLineChanged;
 
     XLinePathSubLines sublines;
     public XLinePathSubLines Sublines
@@ -22,17 +24,6 @@ public class XLinePath : MonoBehaviour
     
     void Start()
     {
-        //if (!Application.isPlaying)
-        //{
-        //    XLinePathSubLine[] sl = GetComponentsInChildren<XLinePathSubLine>();
-        //    if (sl == null || sl.Length == 0)
-        //    {
-        //        GameObject sl_go = new GameObject("Subline (1)", typeof(XLinePathSubLine));
-        //        sl_go.transform.SetParent(transform);
-        //        sl_go.transform.localScale = Vector3.one;
-        //        sl_go.transform.localPosition = Vector3.zero;
-        //    }
-        //}
         Init();
     }
 
@@ -52,44 +43,47 @@ public class XLinePath : MonoBehaviour
         return sl.GetInterpolatedPoint(dist);
     }
 
-    public void GetInterpolatedValues(int subline, float dist, out Vector3 pos, out Vector3 vel, out Vector3 acc, out Vector3 up)
+    public float GetInterpolatedValues(int subline, float dist, out Vector3 pos, out Vector3 vel, out Vector3 acc, out Vector3 up)
     {
         XLinePathSubLine sl = Sublines[subline];
-        sl.GetInterpolatedValues(dist, out pos, out vel, out acc, out up);
+        return sl.GetInterpolatedValues(dist, out pos, out vel, out acc, out up);
     }
-    public void GetInterpolatedValues(int subline, float dist, out Vector3 pos, out Vector3 vel, out Vector3 acc)
+    public float GetInterpolatedValues(int subline, float dist, out Vector3 pos, out Vector3 vel, out Vector3 acc)
     {
         XLinePathSubLine sl = Sublines[subline];
-        sl.GetInterpolatedValues(dist, out pos, out vel, out acc);
+        return sl.GetInterpolatedValues(dist, out pos, out vel, out acc);
     }
 
-    public void GetInterpolatedValues(int subline, float dist, out Vector3 pos, out Vector3 vel)
+    public float GetInterpolatedValues(int subline, float dist, out Vector3 pos, out Vector3 vel)
     {
         XLinePathSubLine sl = Sublines[subline];
-        sl.GetInterpolatedValues(dist, out pos, out vel);
+        return sl.GetInterpolatedValues(dist, out pos, out vel);
     }
 
 #if UNITY_EDITOR
     /// <summary>
     /// Указывает плавность сегментов (Editor only)
     /// </summary>
-    public int Precision = 50;
+    public int editor_Precision = 50;
     /// <summary>
     ///  (Editor only)
     /// </summary>
-    public bool inEditorShowGizmos = true;
+    public bool editor_inEditorShowGizmos = true;
     /// <summary>
     ///  (Editor only)
     /// </summary>
-    public float gizmoPointRadius = 0.2f;
+    public float editor_gizmoPointRadius = 0.2f;
+
+    public XLinePathSubLine editor_changedSubLine;
+
     void OnDrawGizmos()
     {
-        if (!inEditorShowGizmos)
+        if (!editor_inEditorShowGizmos)
             return;
         sublines = GetComponentsInChildren<XLinePathSubLine>();
         foreach (var item in Sublines)
         {
-            item.DrawSegmentGizmo(Precision, gizmoPointRadius);
+            item.DrawSegmentGizmo(editor_Precision, editor_gizmoPointRadius);
         }
         if (sublines.Count == 0)
             sublines = null;
@@ -117,5 +111,23 @@ public class XLinePath : MonoBehaviour
     {
         XLinePathSubLine sl = Sublines[subline];
         return sl.GetInterpolatedPointEx(dist);
+    }
+
+    void IXLinePath.OnSubLineChanged(XLinePathSubLine subLine)
+    {
+        for (int i = 0; i < Sublines.Count; i++)
+        {
+            if(subLine == Sublines[i])
+            {
+                OnLineChanged?.Invoke(i, subLine);
+#if UNITY_EDITOR
+                editor_changedSubLine = subLine;
+#endif
+                return;
+            }
+        }
+#if UNITY_EDITOR
+        editor_changedSubLine = subLine;
+#endif
     }
 }
