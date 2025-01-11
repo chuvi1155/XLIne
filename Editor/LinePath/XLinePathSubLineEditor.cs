@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEditor;
 using UnityEngine.UI;
 using System.Collections.Generic;
@@ -7,6 +7,7 @@ using static UnityEngine.GraphicsBuffer;
 [CustomEditor(typeof(XLinePathSubLine))]
 public class XLinePathSubLineEditor : Editor
 {
+    private static bool inEditorClickModeOn = false;
     private static bool _foldout;
     private static bool _seg_foldout;
     private static bool _show_primitives;
@@ -25,7 +26,7 @@ public class XLinePathSubLineEditor : Editor
 
     private void OnDisable()
     {
-        if (_target.inEditorClickModeOn)
+        if (inEditorClickModeOn)
             SetAsSelected();
     }
 
@@ -79,11 +80,11 @@ public class XLinePathSubLineEditor : Editor
 
         EditorGUILayout.HelpBox("Curve Length: "+_target.Length.ToString("f2") + "\n\rPoint count: " + _target.GetPoints().Length, MessageType.Info);
 
-        if (_target.inEditorClickModeOn)
+        if (inEditorClickModeOn)
             GUI.color = Color.yellow;
         if (GUILayout.Button("Create points"))
         {
-            _target.inEditorClickModeOn = !_target.inEditorClickModeOn;
+            inEditorClickModeOn = !inEditorClickModeOn;
         }
         GUI.color = Color.white;
         EditorGUILayout.EndVertical();
@@ -492,7 +493,7 @@ public class XLinePathSubLineEditor : Editor
     {
         if (GUI.changed)
             EditorUtility.SetDirty(target);
-        if (!_target.inEditorClickModeOn)
+        if (!inEditorClickModeOn)
             return;
         Event e = Event.current;
         Handles.BeginGUI();
@@ -528,6 +529,6 @@ public class XLinePathSubLineEditor : Editor
             }
         }
         else if (Event.current.type == EventType.MouseDown && Event.current.button == 1)
-            _target.inEditorClickModeOn = false;
+            inEditorClickModeOn = false;
     }
 }
