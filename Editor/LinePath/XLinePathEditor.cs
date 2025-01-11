@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
@@ -9,9 +9,9 @@ public class XLinePathEditor : Editor
     public override void OnInspectorGUI()
     {
         XLinePath _target = target as XLinePath;
-        _target.Precision = EditorGUILayout.IntField("Line smoothes", _target.Precision);
-        _target.inEditorShowGizmos = EditorGUILayout.Toggle("Show Gizmos", _target.inEditorShowGizmos);
-        _target.gizmoPointRadius = EditorGUILayout.Slider("Gizmo size", _target.gizmoPointRadius, 0f, 1f);
+        _target.editor_Precision = EditorGUILayout.IntField("Line smoothes", _target.editor_Precision);
+        _target.editor_inEditorShowGizmos = EditorGUILayout.Toggle("Show Gizmos", _target.editor_inEditorShowGizmos);
+        _target.editor_gizmoPointRadius = EditorGUILayout.Slider("Gizmo size", _target.editor_gizmoPointRadius, 0f, 1f);
 
         if (GUILayout.Button("Create Subline"))
         {
