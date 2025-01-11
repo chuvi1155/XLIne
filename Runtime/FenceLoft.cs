@@ -96,7 +96,7 @@ public class FenceLoft : SplineLoft
         base.Start();
     }
 
-    public override void InitLoft()
+    public override void InitLoft(bool force = false)
     {
         if (Span != null)
         {

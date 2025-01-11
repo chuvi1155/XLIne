@@ -6,7 +6,7 @@ public class SplineLoft : MonoBehaviour
 {
     public XLinePath CurveForm;
     public XLinePath CurvePath;
-    public List<Material> material;
+    public List<Material> material = new List<Material>();
     public int PathQuality = 10;
     public int FormQuality = 10;
     public bool isInitOK = false;
@@ -37,7 +37,6 @@ public class SplineLoft : MonoBehaviour
     public bool UseCanvasRenderer = false;
 
     private Vector3 multiFormOffset;
-    List<Material> mats = new List<Material>();
 
     public virtual void Start()
     {
@@ -72,9 +71,16 @@ public class SplineLoft : MonoBehaviour
     public void ClearLoft()
     {
         Debug.Log("ClearLoft");
+#if UNITY_EDITOR
+        if(CurvePath != null)
+            CurvePath.editor_changedSubLine = null;
+        if (CurveForm != null)
+            CurveForm.editor_changedSubLine = null; 
+#endif
         if (filter != null && filter.sharedMesh != null)
         {
             filter.sharedMesh.Clear();
+            DestroyImmediate(filter.sharedMesh);
             filter.sharedMesh = null;
         }
         if (UseCanvasRenderer)
@@ -83,10 +89,10 @@ public class SplineLoft : MonoBehaviour
             if (_cr != null) _cr.Clear(); 
         }
     }
-    public virtual void InitLoft()
+    public virtual void InitLoft(bool force = false)
     {
         Debug.Log("InitLoft");
-        if (!isInitOK)
+        if (!isInitOK || force)
         {
             if (CurveForm == null || CurvePath == null)
             {
@@ -110,25 +116,25 @@ public class SplineLoft : MonoBehaviour
             }
             else
             {
-                if (GetComponent<MeshRenderer>() != null)
-                    DestroyImmediate(gameObject.GetComponent<MeshRenderer>());
+                var mr = GetComponent<MeshRenderer>();
+                if (mr != null)
+                    DestroyImmediate(mr);
             }
             UpdateMesh();
-            if (AddCollider && Application.isPlaying && GetComponent<Collider>() == null)
-                gameObject.AddComponent<MeshCollider>();
+            if (AddCollider)
+            {
+                var mc = gameObject.GetComponent<MeshCollider>();
+                if (mc == null)
+                    mc = gameObject.AddComponent<MeshCollider>();
+                mc.sharedMesh = filter.sharedMesh;
+            }
             else
             {
-                if (gameObject.GetComponent<Collider>() != null)
-                    DestroyImmediate(gameObject.GetComponent<Collider>());
+                var col = GetComponent<MeshCollider>();
+                if (col != null)
+                    DestroyImmediate(col);
             }
             isInitOK = true;
-            if (GetComponent<Collider>() != null)
-            {
-                MeshCollider mc = (GetComponent<Collider>() as MeshCollider);
-                //mc.convex = true;
-                mc.sharedMesh = filter.sharedMesh;
-                //mc.convex = false;
-            }
         }
     }
 
@@ -164,15 +170,17 @@ public class SplineLoft : MonoBehaviour
         if (filter.sharedMesh == null)
         {
             filter.sharedMesh = new Mesh();
+            filter.sharedMesh.MarkDynamic();
             filter.sharedMesh.name = "filter.sharedMesh";
         }
         if (UseCanvasRenderer && Form2D)
             mergeSubForms = false;
 
         GenerateLoft(filter.sharedMesh);
-        if (GetComponent<Collider>() != null)
+        filter.sharedMesh.MarkModified();
+        var mc = GetComponent<MeshCollider>();
+        if (mc != null)
         {
-            MeshCollider mc = (GetComponent<Collider>() as MeshCollider);
             mc.convex = true;
             mc.sharedMesh = filter.sharedMesh;
             mc.convex = false;
@@ -200,23 +208,19 @@ public class SplineLoft : MonoBehaviour
                 int n = 1;
                 for (int i = 0; i < filter.sharedMesh.subMeshCount; i++)
                 {
-                    if (mats.Count <= i)
+                    if (CurvePath.Sublines != null && i < CurvePath.Sublines.Count)
                     {
-                        if (CurvePath.Sublines != null && i < CurvePath.Sublines.Count)
-                        {
-                            Material mat = material != null && material.Count > 0 && material[i % material.Count] != null ?
-                                new Material(material[i % material.Count]) :
-                                new Material(Shader.Find("Diffuse"));
-                            mat.color = CurvePath.Sublines[i].curveColor;
-                            mats.Add(mat);
-                            cr.materialCount = n++;
-                            cr.SetMaterial(mat, i);
-                        }
-                        else
-                        {
-                            Debug.LogWarning("escape");
-                        } 
+                        Material mat = material != null && material.Count > 0 && material[i % material.Count] != null ?
+                            new Material(material[i % material.Count]) :
+                            new Material(Shader.Find("Diffuse"));
+                        mat.color = CurvePath.Sublines[i].curveColor;
+                        cr.materialCount = n++;
+                        cr.SetMaterial(mat, i);
                     }
+                    else
+                    {
+                        Debug.LogWarning("Set material escape, CurvePath.Sublines is null or CurvePath.Sublines.Count < (subMeshCount)" + filter.sharedMesh.subMeshCount);
+                    } 
                 }
             }
         }
@@ -231,7 +235,8 @@ public class SplineLoft : MonoBehaviour
 
             MeshRenderer mr = GetComponent<MeshRenderer>();
             if (mr == null) mr = gameObject.AddComponent<MeshRenderer>();
-            mr.enabled = true;
+            //mr.enabled = true;
+            mr.sharedMaterials = material.ToArray();
 
             if (Form2D)
             {
@@ -251,24 +256,21 @@ public class SplineLoft : MonoBehaviour
                     {
                         sl = CurvePath.Sublines[n++];
                     }
-                    if (mats.Count <= i)
+                    if (CurvePath.Sublines != null && sl.GetPoints().Length > 1)
                     {
-                        if (CurvePath.Sublines != null && sl.GetPoints().Length > 1)
-                        {
-                            Material mat = material != null && material.Count > 0 && material[i % material.Count] != null ?
-                                new Material(material[i % material.Count]) :
-                                new Material(Shader.Find("Diffuse"));
-                            mat.color = sl.curveColor;
-                            mats.Add(mat);
-                        }
-                        else
-                        {
-                            Debug.LogWarning("escape");
-                        }  
+                        Material mat = material != null && material.Count > 0 && material[i % material.Count] != null ?
+                            new Material(material[i % material.Count]) :
+                            new Material(Shader.Find("Diffuse"));
+                        mat.color = sl.curveColor;
+                        if(mr.sharedMaterial == null && (mr.sharedMaterials == null || mr.sharedMaterials.Length == 0))
+                            mr.sharedMaterial = mat;
                     }
+                    else
+                    {
+                        Debug.LogWarning("Set material escape, CurvePath.Sublines is null or CurvePath.Sublines.Count < (subMeshCount)" + filter.sharedMesh.subMeshCount);
+                    }  
                 }
             }
-            mr.materials = mats.ToArray();
         }
     }
     
@@ -1198,6 +1200,16 @@ public class SplineLoft : MonoBehaviour
         return tangents.ToArray();
     }
 
+
+    public virtual void Clear()
+    {
+        if (DestroyOnStart || Application.isEditor)
+        {
+            filter.sharedMesh.Clear();
+            DestroyImmediate(filter.sharedMesh);
+            filter.sharedMesh = null;
+        }
+    }
 #if UNITY_EDITOR
     struct g_Data
     {
@@ -1217,6 +1229,7 @@ public class SplineLoft : MonoBehaviour
 
     void OnDrawGizmos()
     {
+        if (CurvePath == null || CurveForm == null) return;
         for (int i = 0; i < g_list.Count; i+=2)
         {
             Gizmos.color = Color.blue;
@@ -1226,6 +1239,16 @@ public class SplineLoft : MonoBehaviour
             Gizmos.color = Color.red;
             Gizmos.DrawRay(pos + g_list[i + 1].pos, g_list[i].dir);
             Gizmos.DrawSphere(pos + g_list[i + 1].pos, 0.05f);
+        }
+        if(CurvePath.editor_changedSubLine != null)
+        {
+            InitLoft(true);
+            CurvePath.editor_changedSubLine = null;
+        }
+        else if (CurveForm.editor_changedSubLine != null)
+        {
+            InitLoft(true);
+            CurveForm.editor_changedSubLine = null;
         }
     }
 #endif

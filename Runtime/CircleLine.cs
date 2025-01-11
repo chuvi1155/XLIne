@@ -103,7 +103,7 @@ public class CircleLine : XLinePathSubLine
         }
 
 #if UNITY_EDITOR
-        parentPrecision = parent.Precision; 
+        parentPrecision = parent.editor_Precision; 
 #endif
         _length = 0;
         _segments = new XLinePathSegment[4];

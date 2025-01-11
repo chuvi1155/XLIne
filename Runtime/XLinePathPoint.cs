@@ -110,11 +110,11 @@ public class XLinePathPoint : MonoBehaviour
 
     public Vector3 ForwardDir
     {
-        get { return (ForwardPoint - Pos).normalized; }
+        get { return ForwardPoint - Pos; }
     }
     public Vector3 BackwardDir
     {
-        get { return (BackwardPoint - Pos).normalized; }
+        get { return BackwardPoint - Pos; }
     }
 
     public Vector3 ForwardDir2D
@@ -252,8 +252,13 @@ public class XLinePathPoint : MonoBehaviour
             //transform.up = hit.normal;
             transform.localRotation = Quaternion.LookRotation(transform.forward, hit.normal);
         }
+        ParentCurve.SetDirty();
     }
+
 #if UNITY_EDITOR
+
+    Vector3 oldPos;
+    Quaternion oldRot;
     void OnDrawGizmos()
     {
         if (transform.parent == null) return;
@@ -262,12 +267,20 @@ public class XLinePathPoint : MonoBehaviour
         if (!_parentCurve || !_parentCurve.InEditorShowGizmos)
             return;
         Gizmos.color = Color.yellow * 2f;
-        if (!ParentCurve.Force2D) Gizmos.DrawSphere(Pos, ParentCurve.Parent.gizmoPointRadius > 0 ? ParentCurve.Parent.gizmoPointRadius * 4f : 0.4f);// Gizmos.DrawIcon(Pos, "dot", true);
-        else Gizmos.DrawSphere(Pos, ParentCurve.Parent.gizmoPointRadius * 2f);
+        if (!ParentCurve.Force2D) Gizmos.DrawSphere(Pos, ParentCurve.Parent.editor_gizmoPointRadius > 0 ? ParentCurve.Parent.editor_gizmoPointRadius * 4f : 0.4f);// Gizmos.DrawIcon(Pos, "dot", true);
+        else Gizmos.DrawSphere(Pos, ParentCurve.Parent.editor_gizmoPointRadius * 2f);
 
         Gizmos.color = Color.gray;
         Gizmos.DrawLine(ForwardPoint, Pos);
         Gizmos.DrawLine(Pos, BackwardPoint);
+
+        if (oldPos != transform.position || oldRot != transform.localRotation || IsDirty)
+        {
+            ParentCurve.SetDirty();
+            IsDirty = false;
+        }
+        oldPos = transform.position;
+        oldRot = transform.localRotation;
     } 
 #endif
 }

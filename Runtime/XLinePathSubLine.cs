@@ -9,7 +9,6 @@ public class XLinePathSubLine : MonoBehaviour
     public delegate void XLinePathSubLineChange(XLinePathSubLine subline);
     public event XLinePathSubLineChange OnLineChanged;
 #if UNITY_EDITOR
-    public bool inEditorClickModeOn = false; 
     public virtual bool InEditorShowGizmos
     {
         get
