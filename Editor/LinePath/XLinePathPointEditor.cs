@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEditor;
 
 [CustomEditor(typeof(XLinePathPoint))]
@@ -25,12 +25,14 @@ public class XLinePathPointEditor : Editor
         GUI.color = Color.blue;
         GUILayout.Box(new GUIContent(EditorGUIUtility.whiteTexture));
         GUI.color = col;
-        Vector3 val = EditorGUILayout.Vector3Field("Point 1", point.ForwardPoint);
+        //Vector3 val = EditorGUILayout.Vector3Field("Point 1", point.ForwardPoint);
+        float len = EditorGUILayout.FloatField("Point 1 length", point.ForwardDir.magnitude);
         EditorGUILayout.EndHorizontal();
         if (is2d) EditorGUILayout.LabelField("Local:", point.ForwardPoint2D.ToString());
         if (GUI.changed)
         {
-            point.ForwardPoint = val;
+            //point.ForwardPoint = val;
+            point.ForwardPoint = point.Pos + point.transform.forward.normalized * len;
             GUI.changed = false;
             EditorUtility.SetDirty(target);
         }
@@ -38,12 +40,14 @@ public class XLinePathPointEditor : Editor
         GUI.color = Color.red;
         GUILayout.Box(new GUIContent(EditorGUIUtility.whiteTexture));
         GUI.color = col;
-        val = EditorGUILayout.Vector3Field("Point 2", point.BackwardPoint);
+        //val = EditorGUILayout.Vector3Field("Point 2", point.BackwardPoint);
+        len = EditorGUILayout.FloatField("Point 2 length", point.BackwardDir.magnitude);
         EditorGUILayout.EndHorizontal();
         if (is2d) EditorGUILayout.LabelField("Local:", point.BackwardPoint2D.ToString());
         if (GUI.changed)
         {
-            point.BackwardPoint = val;
+            //point.BackwardPoint = val;
+            point.BackwardPoint = point.Pos - point.transform.forward.normalized * len;
             GUI.changed = false;
             EditorUtility.SetDirty(target);
         }
@@ -56,24 +60,11 @@ public class XLinePathPointEditor : Editor
                 point.backwardPoint = point.forwardPoint = Vector3.zero;
                 EditorUtility.SetDirty(target);
             }
-
-            //if (GUILayout.Button("Set smooth"))
-            //{
-            //    point.backwardPoint = Vector3.one;
-            //    point.forwardPoint = -point.backwardPoint;
-            //    EditorUtility.SetDirty(target);
-            //}
         }
         GUILayout.EndHorizontal();
 
         if (GUILayout.Button("Snap to road"))
         {
-            //Vector3 p = point.Pos;
-            //Ray r = new Ray(p + Vector3.up * 3f, -Vector3.up);
-            //RaycastHit hit;
-            //LayerMask roadLayer = LayerMask.NameToLayer("Road");
-            //if (Physics.Raycast(r, out hit, 10000, roadLayer))
-            //    point.Pos = hit.point;
             point.SnapToRoad();
         }
         if (GUILayout.Button("Add Point"))
