@@ -1,124 +1,133 @@
 using UnityEngine;
 using System.Collections;
-#if UNITY_EDITOR
-using UnityEditor;
-
-[CustomEditor(typeof(LineSpace))]
-class LineSpaceEditor : Editor
-{
-    public override void OnInspectorGUI()
-    {
-        base.OnInspectorGUI();
-        Color gui_col = GUI.color;
-        GUI.color = (target as LineSpace).IsEmulateInEditor ? Color.yellow : gui_col;
-        if (GUILayout.Button("Emulate"))
-        {
-            for (int i = 0; i < targets.Length; i++)
-            {
-                (targets[i] as LineSpace).IsEmulateInEditor = !(targets[i] as LineSpace).IsEmulateInEditor;
-            }
-        }
-        GUI.color = gui_col;
-    }
-}
-#endif
+using System.Collections.Generic;
 
 [ExecuteInEditMode]
-[AddComponentMenu("Chuvi/Line/_Modificators/LineSpace")]
-public class LineSpace : MonoBehaviour 
+[AddComponentMenu("Chuvi/Line/XLinePath")]
+public class XLinePath : MonoBehaviour, IXLinePath
 {
-	public XLinePath curve;
-    public bool AvtoMove = true;
-    public float Distantion;
-    public int subline = 0;
-    public float Speed = 5;
-    public bool IsFollowed = false;
-    Vector3 pos, vel;
+    public delegate void XLinePathChange(int sublineIndex, XLinePathSubLine subline);
+    public event XLinePathChange OnLineChanged;
 
-    public float wheelRadius = 1;
-    public float wheelDirections = -1;
-    public Transform[] frontWheels;
-    public Transform[] rearWheels;
-    float oldDist = 0;
-    float ang = 0;
+    XLinePathSubLines sublines;
+    public XLinePathSubLines Sublines
+    {
+        get
+        {
+            if(sublines == null)
+                sublines = GetComponentsInChildren<XLinePathSubLine>();
+            return sublines;
+        }
+    }
+    public bool IsInit { get; private set; }
+
+    
+    void Start()
+    {
+        Init();
+    }
+
+    public void Init()
+    {
+        sublines = GetComponentsInChildren<XLinePathSubLine>();
+        for (int i = 0; i < Sublines.Count; i++)
+        {
+            Sublines[i].Init();
+        }
+        IsInit = true;
+    }
+
+    public Vector3 GetInterpolatedPoint(int subline, float dist)
+    {
+        XLinePathSubLine sl = Sublines[subline];
+        return sl.GetInterpolatedPoint(dist);
+    }
+
+    public float GetInterpolatedValues(int subline, float dist, out Vector3 pos, out Vector3 vel, out Vector3 acc, out Vector3 up)
+    {
+        XLinePathSubLine sl = Sublines[subline];
+        return sl.GetInterpolatedValues(dist, out pos, out vel, out acc, out up);
+    }
+    public float GetInterpolatedValues(int subline, float dist, out Vector3 pos, out Vector3 vel, out Vector3 acc)
+    {
+        XLinePathSubLine sl = Sublines[subline];
+        return sl.GetInterpolatedValues(dist, out pos, out vel, out acc);
+    }
+
+    public float GetInterpolatedValues(int subline, float dist, out Vector3 pos, out Vector3 vel)
+    {
+        XLinePathSubLine sl = Sublines[subline];
+        return sl.GetInterpolatedValues(dist, out pos, out vel);
+    }
 
 #if UNITY_EDITOR
-    bool isEmulateInEditor = false;
-    double dt;
-    public bool IsEmulateInEditor
-    {
-        get { return isEmulateInEditor; }
-        set
-        {
-            isEmulateInEditor = value;
-            if (isEmulateInEditor)
-            {
-                dt = EditorApplication.timeSinceStartup;
-                EditorApplication.update += Emulator;
-            }
-            else
-            {
-                EditorApplication.update -= Emulator;
-            }
-        }
-    }
+    /// <summary>
+    /// Указывает плавность сегментов (Editor only)
+    /// </summary>
+    public int editor_Precision = 50;
+    /// <summary>
+    ///  (Editor only)
+    /// </summary>
+    public bool editor_inEditorShowGizmos = true;
+    /// <summary>
+    ///  (Editor only)
+    /// </summary>
+    public float editor_gizmoPointRadius = 0.2f;
 
-    void Emulator()
+    public XLinePathSubLine editor_changedSubLine;
+
+    void OnDrawGizmos()
     {
-        if (EditorApplication.isPlaying) return;
-        if (transform == null)
-        {
-            IsEmulateInEditor = false;
+        if (!editor_inEditorShowGizmos)
             return;
+        sublines = GetComponentsInChildren<XLinePathSubLine>();
+        foreach (var item in Sublines)
+        {
+            item.DrawSegmentGizmo(editor_Precision, editor_gizmoPointRadius);
         }
-        float _dt = (float)(EditorApplication.timeSinceStartup - dt);
-        Distantion += _dt * Speed;
-        dt = EditorApplication.timeSinceStartup;
-    }
+        if (sublines.Count == 0)
+            sublines = null;
+    } 
 #endif
 
-    void Update () 
-	{
-        if (curve == null || !curve.enabled || !curve.gameObject.activeSelf) return;
-        if (Application.isPlaying && AvtoMove)
-            Distantion += Time.deltaTime * Speed;
-        curve.GetInterpolatedValues(subline, Distantion, out pos, out vel, out Vector3 acc, out Vector3 up);
-        transform.position = pos;
-        if (IsFollowed)
-        {
-            //transform.forward = vel;
-            //transform.right = acc;
-            //transform.LookAt(transform.position + vel, Vector3.Cross(vel.normalized, acc.normalized));
-            transform.LookAt(transform.position + vel, up);
-        }
-
-        Debug.DrawRay(pos, vel * 10f, Color.blue);
-        Debug.DrawRay(pos, acc * 10f, Color.red);
-
-        if (frontWheels != null && frontWheels.Length > 0)
-        {
-            if(wheelRadius != 0)
-            ang = (((Distantion - oldDist) / wheelRadius) * Mathf.Rad2Deg) * wheelDirections;
-            for (int i = 0; i < frontWheels.Length; i++)
-            {
-                frontWheels[i].Rotate(ang, 0, 0, Space.Self);
-                //frontWheels[i].localEulerAngles += new Vector3(ang, 0, 0);
-            }
-            for (int i = 0; i < rearWheels.Length; i++)
-            {
-                rearWheels[i].Rotate(ang, 0, 0, Space.Self);
-                //rearWheels[i].localEulerAngles += new Vector3(ang, 0, 0);
-            }
-        }
-        oldDist = Distantion;
+    public Vector3[] GetCurvePoints(int subline)
+    {
+        XLinePathSubLine sl = Sublines[subline];
+        return sl.GetCurvePoints();
     }
 
-    public Vector3 GetPosition()
+    public void Smooth(int subline)
     {
-        return pos;
+        Sublines[subline].Smooth();
     }
-    public Vector3 GetDirection()
+
+    public void GetInterpolatedValuesEx(int subline, float dist, out Vector3 pos, out Vector3 vel)
     {
-        return vel;
+        XLinePathSubLine sl = Sublines[subline];
+        sl.GetInterpolatedValuesEx(dist, out pos, out vel);
+    }
+
+    public Vector3 GetInterpolatedPointEx(int subline, float dist)
+    {
+        XLinePathSubLine sl = Sublines[subline];
+        return sl.GetInterpolatedPointEx(dist);
+    }
+
+    void IXLinePath.OnSubLineChanged(XLinePathSubLine subLine)
+    {
+        for (int i = 0; i < Sublines.Count; i++)
+        {
+            if(subLine == Sublines[i])
+            {
+                OnLineChanged?.Invoke(i, subLine);
+#if UNITY_EDITOR
+                editor_changedSubLine = subLine;
+#endif
+                return;
+            }
+        }
+#if UNITY_EDITOR
+        editor_changedSubLine = subLine;
+#endif
     }
 }
