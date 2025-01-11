@@ -1,0 +1,15 @@
+{
+  "name": "com.chuvi.xlines",
+  "displayName": "XLines",
+  "version": "1.0.0",
+  "unity": "2018.1",
+  "description": "Lines bezier extensions",
+  "author": {
+    "name": "Stanislav Blinov",
+    "email": "chuvi1155@gmail.com",
+    "url": ""
+  },
+  "type": "tool",
+  "gitDependencies": {
+  }
+}
