@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 public class XLinePathSegment
 {
@@ -11,6 +11,9 @@ public class XLinePathSegment
     private struct LengthSegment
     {
         public float T;
+        /// <summary>
+        /// current length on current time-point
+        /// </summary>
         public float len;
     }
 
@@ -172,6 +175,10 @@ public class XLinePathSegment
     public void Recalculate(bool force2D)
     {
         float len = 0;
+        if (SegmentPartsCount == 1)
+        {
+            SegmentPartsCount = 2;
+        }
         _segments = new LengthSegment[SegmentPartsCount];
         int countSegments = (SegmentPartsCount - 1);
         _segments[0].len = 0;
