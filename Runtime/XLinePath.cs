@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -35,6 +35,28 @@ public class XLinePath : MonoBehaviour, IXLinePath
             Sublines[i].Init();
         }
         IsInit = true;
+    }
+
+    /// <summary>
+    /// Get interpolated point from curve bezier 4 points
+    /// </summary>
+    /// <param name="t">Range 0-1</param>
+    /// <param name="_start">Start point segment</param>
+    /// <param name="_startFwd">Start point direction</param>
+    /// <param name="_end">End point of segment</param>
+    /// <param name="_endBcwd">End point inverted direction</param>
+    /// <returns></returns>
+    public static Vector3 Interpolate(float t, Vector3 _start, Vector3 _startFwdPt, Vector3 _endBcwdPt, Vector3 _end)
+    {
+        Vector3 p0 = _start;
+        Vector3 p1 = _startFwdPt;
+        Vector3 p2 = _endBcwdPt;
+        Vector3 p3 = _end;
+
+        float tinv = 1.0f - t;
+        float tinv_pow = tinv * tinv;
+        float t_pow = t * t;
+        return tinv * tinv_pow * p0 + 3f * (t * tinv_pow * p1 + t_pow * tinv * p2) + t_pow * t * p3;
     }
 
     public Vector3 GetInterpolatedPoint(int subline, float dist)
