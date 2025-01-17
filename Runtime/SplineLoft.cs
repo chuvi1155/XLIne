@@ -1,5 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor; 
+#endif
 
 [AddComponentMenu("Chuvi/Line/_Modificators/SplineLoft")]
 public class SplineLoft : MonoBehaviour
@@ -31,7 +34,7 @@ public class SplineLoft : MonoBehaviour
     public bool brakeFormSegments = false;
     public bool brakePathSegments = false;
     public float brakePathSegmentOffset = 0;
-    public bool DestroyOnStart = true;
+    public bool DestroyOnStart = false;
     public bool UseCenterForm = false;
     public bool Form2D = false;
     public bool UseCanvasRenderer = false;
@@ -177,6 +180,9 @@ public class SplineLoft : MonoBehaviour
             mergeSubForms = false;
 
         GenerateLoft(filter.sharedMesh);
+#if UNITY_EDITOR
+        Unwrapping.GenerateSecondaryUVSet(filter.sharedMesh);
+#endif
         filter.sharedMesh.MarkModified();
         var mc = GetComponent<MeshCollider>();
         if (mc != null)
