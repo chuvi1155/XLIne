@@ -181,6 +181,7 @@ public class SplineLoft : MonoBehaviour
 
         GenerateLoft(filter.sharedMesh);
 #if UNITY_EDITOR
+        filter.sharedMesh.UploadMeshData(false);
         Unwrapping.GenerateSecondaryUVSet(filter.sharedMesh);
 #endif
         filter.sharedMesh.MarkModified();
