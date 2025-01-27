@@ -40,6 +40,7 @@ public class SplineLoft : MonoBehaviour
     public bool UseCanvasRenderer = false;
 
     private Vector3 multiFormOffset;
+    [SerializeField, HideInInspector] private Vector2[] uv2;
 
     public virtual void Start()
     {
@@ -146,7 +147,8 @@ public class SplineLoft : MonoBehaviour
         Debug.Log("UpdateMesh");
         if (CurveForm == null || CurvePath == null)
         {
-            filter.sharedMesh.Clear();
+            if(filter.sharedMesh != null)
+                filter.sharedMesh.Clear();
             filter.sharedMesh = null;
             if (UseCanvasRenderer)
             {
@@ -163,33 +165,34 @@ public class SplineLoft : MonoBehaviour
 
         if (!CurveForm.IsInit) CurveForm.Init();
         if (!CurvePath.IsInit) CurvePath.Init();
-        
-        //foreach (var item in mats)
-        //{
-        //    DestroyImmediate(item);
-        //}
-        //mats.Clear();
 
-        if (filter.sharedMesh == null)
+        var mesh = filter.sharedMesh;
+
+        if (mesh == null)
         {
-            filter.sharedMesh = new Mesh();
-            filter.sharedMesh.MarkDynamic();
-            filter.sharedMesh.name = "filter.sharedMesh";
+            mesh = new Mesh();
+            mesh.MarkDynamic();
+            mesh.name = "filter.sharedMesh";
         }
         if (UseCanvasRenderer && Form2D)
             mergeSubForms = false;
 
-        GenerateLoft(filter.sharedMesh);
+        GenerateLoft(mesh);
+        mesh.UploadMeshData(false);
 #if UNITY_EDITOR
-        filter.sharedMesh.UploadMeshData(false);
-        Unwrapping.GenerateSecondaryUVSet(filter.sharedMesh);
+        Unwrapping.GenerateSecondaryUVSet(mesh);
+        uv2 = mesh.uv2;
+#else
+        if(uv2.Length > 0)
+            mesh.uv2 = uv2;
 #endif
-        filter.sharedMesh.MarkModified();
+        mesh.MarkModified();
+        filter.sharedMesh = mesh;
         var mc = GetComponent<MeshCollider>();
         if (mc != null)
         {
             mc.convex = true;
-            mc.sharedMesh = filter.sharedMesh;
+            mc.sharedMesh = mesh;
             mc.convex = false;
         }
         
@@ -211,7 +214,7 @@ public class SplineLoft : MonoBehaviour
             if (cr != null)
             {
                 cr.materialCount = 0;
-                cr.SetMesh(filter.sharedMesh);
+                cr.SetMesh(mesh);
                 int n = 1;
                 for (int i = 0; i < filter.sharedMesh.subMeshCount; i++)
                 {
@@ -233,13 +236,6 @@ public class SplineLoft : MonoBehaviour
         }
         else
         {
-            //CanvasRenderer cr = GetComponent<CanvasRenderer>();
-            //if (cr != null)
-            //{
-            //    cr.Clear();
-            //    DestroyImmediate(cr);
-            //}
-
             MeshRenderer mr = GetComponent<MeshRenderer>();
             if (mr == null) mr = gameObject.AddComponent<MeshRenderer>();
             //mr.enabled = true;
@@ -254,7 +250,7 @@ public class SplineLoft : MonoBehaviour
             }
 
             int n = 0;
-            for (int i = 0; i < filter.sharedMesh.subMeshCount; i++)
+            for (int i = 0; i < mesh.subMeshCount; i++)
             {
                 if (n < CurvePath.Sublines.Count)
                 {
@@ -274,7 +270,7 @@ public class SplineLoft : MonoBehaviour
                     }
                     else
                     {
-                        Debug.LogWarning("Set material escape, CurvePath.Sublines is null or CurvePath.Sublines.Count < (subMeshCount)" + filter.sharedMesh.subMeshCount);
+                        Debug.LogWarning("Set material escape, CurvePath.Sublines is null or CurvePath.Sublines.Count < (subMeshCount)" + mesh.subMeshCount);
                     }  
                 }
             }
