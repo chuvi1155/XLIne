@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
 using System;
@@ -8,7 +8,6 @@ class LoftEditor : Editor
 {
     SplineLoft loft;
     bool isCleared;
-    SerializedProperty material;
     static string message = "Для того чтобы построить Loft(не знаю как переводится), нужно чтобы:\n" +
                             "1: Изначально было выделенно 2 объекта\n" +
                             "2: Оба объекта должны иметь компонент AntaresBezierCurve\n" +
@@ -67,118 +66,156 @@ class LoftEditor : Editor
         }
     }
 
+
+    SerializedProperty AddCollider;
+    SerializedProperty DestroyOnStart;
+    SerializedProperty CurveForm;
+    SerializedProperty CurvePath;
+    SerializedProperty mergeSubForms;
+    SerializedProperty material;
+    SerializedProperty Form2D;
+    SerializedProperty UseCanvasRenderer;
+    SerializedProperty SetPathByPoints;
+    SerializedProperty PathQuality;
+    SerializedProperty SetFormByPoints;
+    SerializedProperty FormQuality;
+    SerializedProperty UseCenterForm;
+    SerializedProperty MirrorCopyForm;
+    SerializedProperty mirrorCopyByX;
+    SerializedProperty mirrorCopyByY;
+    SerializedProperty mirrorCopyByZ;
+    SerializedProperty Scale;
+    SerializedProperty Offset;
+    SerializedProperty RotateForm;
+    SerializedProperty FixedX;
+    SerializedProperty FixedY;
+    SerializedProperty FixedZ;
+    SerializedProperty MirrorFormX;
+    SerializedProperty MirrorFormY;
+    SerializedProperty MirrorFormZ;
+    SerializedProperty InvertFace;
+    SerializedProperty IsSmooth;
+    SerializedProperty Tiling;
+
     void OnEnable()
     {
+        AddCollider = serializedObject.FindProperty("AddCollider");
+        DestroyOnStart = serializedObject.FindProperty("DestroyOnStart");
+        CurveForm = serializedObject.FindProperty("CurveForm");
+        CurvePath = serializedObject.FindProperty("CurvePath");
+        mergeSubForms = serializedObject.FindProperty("mergeSubForms");
         material = serializedObject.FindProperty("material");
+        Form2D = serializedObject.FindProperty("Form2D");
+        UseCanvasRenderer = serializedObject.FindProperty("UseCanvasRenderer");
+        SetPathByPoints = serializedObject.FindProperty("SetPathByPoints");
+        PathQuality = serializedObject.FindProperty("PathQuality");
+        SetFormByPoints = serializedObject.FindProperty("SetFormByPoints");
+        FormQuality = serializedObject.FindProperty("FormQuality");
+        UseCenterForm = serializedObject.FindProperty("UseCenterForm");
+        MirrorCopyForm = serializedObject.FindProperty("MirrorCopyForm");
+        mirrorCopyByX = serializedObject.FindProperty("mirrorCopyByX");
+        mirrorCopyByY = serializedObject.FindProperty("mirrorCopyByY");
+        mirrorCopyByZ = serializedObject.FindProperty("mirrorCopyByZ");
+        Scale = serializedObject.FindProperty("Scale");
+        Offset = serializedObject.FindProperty("Offset");
+        RotateForm = serializedObject.FindProperty("RotateForm");
+        FixedX = serializedObject.FindProperty("FixedX");
+        FixedY = serializedObject.FindProperty("FixedY");
+        FixedZ = serializedObject.FindProperty("FixedZ");
+        MirrorFormX = serializedObject.FindProperty("MirrorFormX");
+        MirrorFormY = serializedObject.FindProperty("MirrorFormY");
+        MirrorFormZ = serializedObject.FindProperty("MirrorFormZ");
+        InvertFace = serializedObject.FindProperty("InvertFace");
+        IsSmooth = serializedObject.FindProperty("IsSmooth");
+        Tiling = serializedObject.FindProperty("Tiling");
         if (loft == null)
             loft = target as SplineLoft;
-        //if (!ClearLoftMeshes.ClearedMeshes.ContainsKey(loft.gameObject))
-        //{
-        //    ClearLoftMeshes.ClearedMeshes.Add(loft.gameObject, true);
-        //    loft.AddCollider = true;
-        //}
     }
 
     public override void OnInspectorGUI()
     {
         serializedObject.Update();
-        //if (Application.isPlaying)
-        //{
-        //    this.DrawDefaultInspector();
-        //    return;
-        //}
-        //serializedObject.Update();
-        //ClearLoftMeshes.ClearedMeshes[loft.gameObject] = GUILayout.Toggle(ClearLoftMeshes.ClearedMeshes[loft.gameObject], "Удаляемый");
-        loft.AddCollider = GUILayout.Toggle(loft.AddCollider, "Добавить коллайдер");
-        loft.DestroyOnStart = GUILayout.Toggle(loft.DestroyOnStart, "DestroyOnStart");
+
+        EditorGUILayout.PropertyField(AddCollider, new GUIContent("Добавить коллайдер"));
+        EditorGUILayout.PropertyField(DestroyOnStart, new GUIContent("DestroyOnStart"));
 
         EditorGUILayout.BeginVertical("box");
-        loft.CurveForm = (XLinePath)EditorGUILayout.ObjectField("Form bezier", loft.CurveForm, typeof(XLinePath), true);
-        loft.CurvePath = (XLinePath)EditorGUILayout.ObjectField("Path bezier", loft.CurvePath, typeof(XLinePath), true);
-        if (loft.CurvePath != null && loft.CurvePath.Sublines != null && loft.CurvePath.Sublines.Count > 1)
-            loft.mergeSubForms = EditorGUILayout.Toggle("Merge sub-line Forms", loft.mergeSubForms);
-        //loft.material = (Material)EditorGUILayout.ObjectField("Material", loft.material, typeof(Material), true);
+        EditorGUILayout.PropertyField(CurveForm, new GUIContent("Форма"));
+        EditorGUILayout.PropertyField(CurvePath, new GUIContent("Путь"));
+        var line = CurvePath.objectReferenceValue as XLinePath;
+        if (line != null && line.Sublines != null && line.Sublines.Count > 1)
+            EditorGUILayout.PropertyField(mergeSubForms, new GUIContent("Merge sub-line Forms"));
+
         EditorGUI.indentLevel++;
-        EditorGUI.BeginChangeCheck();
-        material = serializedObject.FindProperty("material");
-        bool showChildren = EditorGUILayout.PropertyField(material, new GUIContent("Materials"));
-        if (material.isExpanded)
-        {
-            material.arraySize = EditorGUILayout.IntField(material.arraySize);
-            //while (material.MoveArrayElement(0, material.arraySize))
-            //    EditorGUILayout.PropertyField(material, new GUIContent("Materials"));
-            for (int i = 0; i < material.arraySize; i++)
-            {
-                loft.material[i] = (Material)EditorGUILayout.ObjectField("Element_" + i, loft.material[i], typeof(Material), true);
-            }
-        }
-        if (EditorGUI.EndChangeCheck())
-            serializedObject.ApplyModifiedProperties();
+        EditorGUILayout.PropertyField(material, new GUIContent("Materials"));
         EditorGUI.indentLevel--;
-        loft.Form2D = GUILayout.Toggle(loft.Form2D, "2D путь");
-        if (loft.Form2D)
+
+        EditorGUILayout.PropertyField(Form2D, new GUIContent("2D путь"));
+        if(Form2D.boolValue)
+            EditorGUILayout.PropertyField(UseCanvasRenderer, new GUIContent("Use CanvasRenderer"));
+
+        EditorGUILayout.PropertyField(SetPathByPoints, new GUIContent("Путь по точкам"));
+        if(!SetPathByPoints.boolValue)
+            EditorGUILayout.PropertyField(PathQuality, new GUIContent("Детал. пути"));
+
+        EditorGUILayout.PropertyField(SetFormByPoints, new GUIContent("Форма по точкам"));
+        if (!SetFormByPoints.boolValue)
+            EditorGUILayout.PropertyField(FormQuality, new GUIContent("Детал. формы"));
+        EditorGUILayout.PropertyField(UseCenterForm, new GUIContent("Pivot is center"));
+
+        EditorGUILayout.BeginVertical("box");
+        EditorGUILayout.PropertyField(MirrorCopyForm, new GUIContent("Зеркальная копия формы"));
+        if (MirrorCopyForm.boolValue)
         {
-            loft.UseCanvasRenderer = GUILayout.Toggle(loft.UseCanvasRenderer, "Use CanvasRenderer");
-            if (GUI.changed && !Application.isPlaying)
-            {
-                GUI.changed = false;
-            }
+            EditorGUI.indentLevel++;
+            EditorGUILayout.PropertyField(mirrorCopyByX, new GUIContent("копия формы по X"));
+            EditorGUILayout.PropertyField(mirrorCopyByY, new GUIContent("копия формы по Y"));
+            EditorGUILayout.PropertyField(mirrorCopyByZ, new GUIContent("копия формы по Z"));
+            EditorGUI.indentLevel--;
         }
-
-        loft.SetPathByPoints = GUILayout.Toggle(loft.SetPathByPoints, "Путь по точкам");
-        if (!loft.SetPathByPoints)
-            loft.PathQuality = EditorGUILayout.IntField("Детал. пути", loft.PathQuality);
-        loft.SetFormByPoints = GUILayout.Toggle(loft.SetFormByPoints, "Форма по точкам");
-        if (!loft.SetFormByPoints)
-            loft.FormQuality = EditorGUILayout.IntField("Детал. формы", loft.FormQuality);
-        loft.UseCenterForm = GUILayout.Toggle(loft.UseCenterForm, "Pivot is center");
+        EditorGUILayout.EndVertical();
+        EditorGUILayout.PropertyField(Scale, new GUIContent("Масштаб"));
+        EditorGUILayout.PropertyField(Offset, new GUIContent("Смещен. формы"));
+        EditorGUILayout.PropertyField(RotateForm, new GUIContent("Вращать форму"));
 
         EditorGUILayout.BeginVertical("box");
-        loft.MirrorCopyForm = GUILayout.Toggle(loft.MirrorCopyForm, "Зеркальная копия формы");
-        loft.mirrorCopyByX = GUILayout.Toggle(loft.mirrorCopyByX, "копия формы по X");
-        loft.mirrorCopyByY = GUILayout.Toggle(loft.mirrorCopyByY, "копия формы по Y");
-        loft.mirrorCopyByZ = GUILayout.Toggle(loft.mirrorCopyByZ, "копия формы по Z");
+        EditorGUILayout.PropertyField(FixedX, new GUIContent("Фиксировать направление по оси X"));
+        EditorGUILayout.PropertyField(FixedY, new GUIContent("Фиксировать направление по оси Y"));
+        EditorGUILayout.PropertyField(FixedZ, new GUIContent("Фиксировать направление по оси Z"));
         EditorGUILayout.EndVertical();
-        loft.Scale = EditorGUILayout.FloatField("Масштаб", loft.Scale);
-        loft.Offset = EditorGUILayout.Vector3Field("Смещен. формы", loft.Offset);
-        loft.RotateForm = EditorGUILayout.Vector3Field("Вращать форму", loft.RotateForm);
 
         EditorGUILayout.BeginVertical("box");
-        loft.FixedX = GUILayout.Toggle(loft.FixedX, "Фиксировать направление по оси X");
-        loft.FixedY = GUILayout.Toggle(loft.FixedY, "Фиксировать направление по оси Y");
-        loft.FixedZ = GUILayout.Toggle(loft.FixedZ, "Фиксировать направление по оси Z");
-        EditorGUILayout.EndVertical();
-
         GUILayout.Label("Отразить форму:");
-        EditorGUILayout.BeginHorizontal();
-        loft.MirrorFormX = GUILayout.Toggle(loft.MirrorFormX, ":X", GUILayout.MaxWidth(40));
-        loft.MirrorFormY = GUILayout.Toggle(loft.MirrorFormY, ":Y", GUILayout.MaxWidth(40));
-        loft.MirrorFormZ = GUILayout.Toggle(loft.MirrorFormZ, ":Z", GUILayout.MaxWidth(40));
-        EditorGUILayout.EndHorizontal();
+        EditorGUI.indentLevel++;
+        EditorGUILayout.PropertyField(MirrorFormX, new GUIContent(":X"), GUILayout.MaxWidth(40));
+        EditorGUILayout.PropertyField(MirrorFormY, new GUIContent(":Y"), GUILayout.MaxWidth(40));
+        EditorGUILayout.PropertyField(MirrorFormZ, new GUIContent(":Z"), GUILayout.MaxWidth(40));
+        EditorGUI.indentLevel--;
+        EditorGUILayout.EndVertical();
         EditorGUILayout.EndVertical();
 
         EditorGUILayout.BeginVertical("box");
-        loft.InvertFace = GUILayout.Toggle(loft.InvertFace, "Инвертирование лицевой стороны");
-        loft.IsSmooth = GUILayout.Toggle(loft.IsSmooth, "Сглаживание");
-        loft.Tiling = EditorGUILayout.Vector2Field("Tiling", loft.Tiling);
+        EditorGUILayout.PropertyField(InvertFace, new GUIContent("Инвертирование лицевой стороны"));
+        EditorGUILayout.PropertyField(IsSmooth, new GUIContent("Сглаживание"));
+        EditorGUILayout.PropertyField(Tiling, new GUIContent("Tiling"));
         EditorGUILayout.EndVertical();
 
         EditorGUILayout.Space();
+
+        GUI.changed = serializedObject.ApplyModifiedProperties();
 
         if (GUILayout.Button("Сброс"))
         {
             loft.isInitOK = false;
             loft.InitLoft();
-            //EditorUtility.SetDirty(loft);
+            EditorUtility.SetDirty(loft);
         }
         else if(GUI.changed)
         {
-            //if (loft.isInitOK) loft.UpdateMesh();
-            //else loft.InitLoft();
             Debug.Log("GUI changed");
             loft.isInitOK = false;
             loft.InitLoft();
-            //EditorUtility.SetDirty(loft);
+            EditorUtility.SetDirty(loft);
         }
     }
 }
