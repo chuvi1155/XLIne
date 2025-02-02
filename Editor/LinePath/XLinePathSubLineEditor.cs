@@ -54,6 +54,7 @@ public class XLinePathSubLineEditor : Editor
         _target.PointNamePrefix = EditorGUILayout.TextField("PointNamePrefix", _target.PointNamePrefix);
         _target.IsClosed = EditorGUILayout.Toggle("Is Closed:", _target.IsClosed);
         _target.Force2D = EditorGUILayout.Toggle("Force 2D:", _target.Force2D);
+        _target.Precision = (int)EditorGUILayout.Slider(_target.Precision, 1, 1000);
         EditorGUILayout.BeginHorizontal();
         {
             Undo.RecordObject(_target, "Zero Transform Position");
@@ -78,14 +79,24 @@ public class XLinePathSubLineEditor : Editor
                 _points[i].SnapToRoad();
         }
 
-        EditorGUILayout.HelpBox("Curve Length: "+_target.Length.ToString("f2") + "\n\rPoint count: " + _target.GetPoints().Length, MessageType.Info);
+        EditorGUILayout.HelpBox($"Curve Length: {_target.Length}\n\r" +
+                                $"Point count: {_target.GetPoints().Length}\n\r" +
+                                $"Segments count: {_target.Segments.Length}\n\r" +
+                                $"Total precission: {_target.Segments.Length * _target.Precision}", MessageType.Info);
 
         if (inEditorClickModeOn)
             GUI.color = Color.yellow;
+        EditorGUILayout.BeginHorizontal();
+        if (GUILayout.Button("Add point"))
+        {
+            var pt = CreatePoint(Vector3.zero);
+            pt.transform.SetParent(_target.transform, true);
+        }
         if (GUILayout.Button("Create points"))
         {
             inEditorClickModeOn = !inEditorClickModeOn;
         }
+        EditorGUILayout.EndHorizontal();
         GUI.color = Color.white;
         EditorGUILayout.EndVertical();
 

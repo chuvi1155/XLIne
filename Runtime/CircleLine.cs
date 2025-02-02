@@ -48,15 +48,15 @@ public class CircleLine : XLinePathSubLine
         }
     }
 
-#if UNITY_EDITOR
-    public override bool InEditorShowGizmos
-    {
-        get
-        {
-            return false;
-        }
-    } 
-#endif
+//#if UNITY_EDITOR
+//    public override bool InEditorShowGizmos
+//    {
+//        get
+//        {
+//            return false;
+//        }
+//    } 
+//#endif
 
     public override void Init()
     {
@@ -102,9 +102,9 @@ public class CircleLine : XLinePathSubLine
             }
         }
 
-#if UNITY_EDITOR
-        parentPrecision = parent.editor_Precision; 
-#endif
+//#if UNITY_EDITOR
+//        parentPrecision = parent.editor_Precision; 
+//#endif
         _length = 0;
         _segments = new XLinePathSegment[4];
         for (int i = 0; i < _segments.Length; i++)
@@ -112,7 +112,7 @@ public class CircleLine : XLinePathSubLine
                 if (!string.IsNullOrEmpty(PointNamePrefix)) points[i].name = PointNamePrefix + i;
                 _segments[i] = new XLinePathSegment(points[i], i + 1 < points.Length ? points[i + 1] : points[0]);
 
-            _segments[i].SegmentPartsCount = parentPrecision;
+            _segments[i].SegmentPartsCount = Precision;
             _segments[i].Recalculate(Force2D);
             _length += _segments[i].length;
         }

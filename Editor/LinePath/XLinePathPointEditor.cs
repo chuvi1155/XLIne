@@ -75,8 +75,9 @@ public class XLinePathPointEditor : Editor
         }
 
         if (GUI.changed)
+        {
             EditorUtility.SetDirty(target);
-
+        }
     }
     Vector3 oldPos = Vector3.zero;
     public void OnSceneGUI()
@@ -89,13 +90,15 @@ public class XLinePathPointEditor : Editor
             if (point.ForwardPoint != point.Pos)
             {
                 Handles.color = Color.blue;
-                var fmh_99_81_638701359867601746 = Quaternion.identity; point.ForwardPoint = Handles.FreeMoveHandle(point.ForwardPoint, HandleUtility.GetHandleSize(point.ForwardPoint) * .1f, Vector3.one, Handles.SphereHandleCap);
+                //point.ForwardPoint = 
+                Handles.FreeMoveHandle(point.ForwardPoint, HandleUtility.GetHandleSize(point.ForwardPoint) * .1f, Vector3.one, Handles.SphereHandleCap);
                 Handles.color = col;
             }
             if (point.BackwardPoint != point.Pos)
             {
                 Handles.color = Color.red;
-                var fmh_105_83_638701359867617414 = Quaternion.identity; point.BackwardPoint = Handles.FreeMoveHandle(point.BackwardPoint, HandleUtility.GetHandleSize(point.BackwardPoint) * .1f, Vector3.one, Handles.SphereHandleCap);
+                //point.BackwardPoint = 
+                Handles.FreeMoveHandle(point.BackwardPoint, HandleUtility.GetHandleSize(point.BackwardPoint) * .1f, Vector3.one, Handles.SphereHandleCap);
                 Handles.color = col;
             } 
         }
