@@ -10,6 +10,7 @@ public class XLinePath : MonoBehaviour, IXLinePath
     public event XLinePathChange OnLineChanged;
 
     XLinePathSubLines sublines;
+    bool isDirty = false;
     public XLinePathSubLines Sublines
     {
         get
@@ -21,7 +22,29 @@ public class XLinePath : MonoBehaviour, IXLinePath
     }
     public bool IsInit { get; private set; }
 
-    
+    bool IXLinePath.IsDirty 
+    {
+        get
+        {
+            var d = isDirty;
+            isDirty = false;
+            return d;
+        }
+        set => isDirty = value; }
+
+    int IXLinePath.Precision =>
+#if UNITY_EDITOR
+        editor_Precision;
+#else
+        50;
+#endif
+    bool IXLinePath.InEditorShowGizmos =>
+#if UNITY_EDITOR
+        editor_inEditorShowGizmos;
+#else 
+        false;
+#endif
+
     void Start()
     {
         Init();
@@ -86,17 +109,15 @@ public class XLinePath : MonoBehaviour, IXLinePath
     /// <summary>
     /// Указывает плавность сегментов (Editor only)
     /// </summary>
-    public int editor_Precision = 50;
+    [SerializeField] int editor_Precision = 50;
     /// <summary>
     ///  (Editor only)
     /// </summary>
-    public bool editor_inEditorShowGizmos = true;
-    /// <summary>
-    ///  (Editor only)
-    /// </summary>
-    public float editor_gizmoPointRadius = 0.2f;
-
-    public XLinePathSubLine editor_changedSubLine;
+    [SerializeField] bool editor_inEditorShowGizmos = true;
+    ///// <summary>
+    /////  (Editor only)
+    ///// </summary>
+    //[SerializeField] float editor_gizmoPointRadius = 0f;
 
     void OnDrawGizmos()
     {
@@ -105,7 +126,7 @@ public class XLinePath : MonoBehaviour, IXLinePath
         sublines = GetComponentsInChildren<XLinePathSubLine>();
         foreach (var item in Sublines)
         {
-            item.DrawSegmentGizmo(editor_Precision, editor_gizmoPointRadius);
+            item.DrawSegmentGizmo(editor_Precision/*, editor_gizmoPointRadius*/);
         }
         if (sublines.Count == 0)
             sublines = null;
@@ -142,14 +163,10 @@ public class XLinePath : MonoBehaviour, IXLinePath
             if(subLine == Sublines[i])
             {
                 OnLineChanged?.Invoke(i, subLine);
-#if UNITY_EDITOR
-                editor_changedSubLine = subLine;
-#endif
+                isDirty = true;
                 return;
             }
         }
-#if UNITY_EDITOR
-        editor_changedSubLine = subLine;
-#endif
+        isDirty = true;
     }
 }

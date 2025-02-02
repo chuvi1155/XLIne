@@ -73,7 +73,7 @@ class LoftEditor : Editor
     SerializedProperty CurvePath;
     SerializedProperty mergeSubForms;
     SerializedProperty material;
-    SerializedProperty Form2D;
+    /*SerializedProperty Form2D;*/
     SerializedProperty UseCanvasRenderer;
     SerializedProperty SetPathByPoints;
     SerializedProperty PathQuality;
@@ -87,12 +87,12 @@ class LoftEditor : Editor
     SerializedProperty Scale;
     SerializedProperty Offset;
     SerializedProperty RotateForm;
-    SerializedProperty FixedX;
+    /*SerializedProperty FixedX;
     SerializedProperty FixedY;
-    SerializedProperty FixedZ;
-    SerializedProperty MirrorFormX;
+    SerializedProperty FixedZ;*/
+    /*SerializedProperty MirrorFormX;
     SerializedProperty MirrorFormY;
-    SerializedProperty MirrorFormZ;
+    SerializedProperty MirrorFormZ;*/
     SerializedProperty InvertFace;
     SerializedProperty IsSmooth;
     SerializedProperty Tiling;
@@ -105,7 +105,7 @@ class LoftEditor : Editor
         CurvePath = serializedObject.FindProperty("CurvePath");
         mergeSubForms = serializedObject.FindProperty("mergeSubForms");
         material = serializedObject.FindProperty("material");
-        Form2D = serializedObject.FindProperty("Form2D");
+        /*Form2D = serializedObject.FindProperty("Form2D");*/
         UseCanvasRenderer = serializedObject.FindProperty("UseCanvasRenderer");
         SetPathByPoints = serializedObject.FindProperty("SetPathByPoints");
         PathQuality = serializedObject.FindProperty("PathQuality");
@@ -119,12 +119,12 @@ class LoftEditor : Editor
         Scale = serializedObject.FindProperty("Scale");
         Offset = serializedObject.FindProperty("Offset");
         RotateForm = serializedObject.FindProperty("RotateForm");
-        FixedX = serializedObject.FindProperty("FixedX");
+        /*FixedX = serializedObject.FindProperty("FixedX");
         FixedY = serializedObject.FindProperty("FixedY");
-        FixedZ = serializedObject.FindProperty("FixedZ");
-        MirrorFormX = serializedObject.FindProperty("MirrorFormX");
+        FixedZ = serializedObject.FindProperty("FixedZ");*/
+        /*MirrorFormX = serializedObject.FindProperty("MirrorFormX");
         MirrorFormY = serializedObject.FindProperty("MirrorFormY");
-        MirrorFormZ = serializedObject.FindProperty("MirrorFormZ");
+        MirrorFormZ = serializedObject.FindProperty("MirrorFormZ");*/
         InvertFace = serializedObject.FindProperty("InvertFace");
         IsSmooth = serializedObject.FindProperty("IsSmooth");
         Tiling = serializedObject.FindProperty("Tiling");
@@ -137,7 +137,7 @@ class LoftEditor : Editor
         serializedObject.Update();
 
         EditorGUILayout.PropertyField(AddCollider, new GUIContent("Добавить коллайдер"));
-        EditorGUILayout.PropertyField(DestroyOnStart, new GUIContent("DestroyOnStart"));
+        //EditorGUILayout.PropertyField(DestroyOnStart, new GUIContent("DestroyOnStart"));
 
         EditorGUILayout.BeginVertical("box");
         EditorGUILayout.PropertyField(CurveForm, new GUIContent("Форма"));
@@ -150,9 +150,9 @@ class LoftEditor : Editor
         EditorGUILayout.PropertyField(material, new GUIContent("Materials"));
         EditorGUI.indentLevel--;
 
-        EditorGUILayout.PropertyField(Form2D, new GUIContent("2D путь"));
-        if(Form2D.boolValue)
-            EditorGUILayout.PropertyField(UseCanvasRenderer, new GUIContent("Use CanvasRenderer"));
+        /*EditorGUILayout.PropertyField(Form2D, new GUIContent("2D путь"));*/
+        /*if(Form2D.boolValue)
+            EditorGUILayout.PropertyField(UseCanvasRenderer, new GUIContent("Use CanvasRenderer"));*/
 
         EditorGUILayout.PropertyField(SetPathByPoints, new GUIContent("Путь по точкам"));
         if(!SetPathByPoints.boolValue)
@@ -178,20 +178,20 @@ class LoftEditor : Editor
         EditorGUILayout.PropertyField(Offset, new GUIContent("Смещен. формы"));
         EditorGUILayout.PropertyField(RotateForm, new GUIContent("Вращать форму"));
 
-        EditorGUILayout.BeginVertical("box");
+        /*EditorGUILayout.BeginVertical("box");
         EditorGUILayout.PropertyField(FixedX, new GUIContent("Фиксировать направление по оси X"));
         EditorGUILayout.PropertyField(FixedY, new GUIContent("Фиксировать направление по оси Y"));
         EditorGUILayout.PropertyField(FixedZ, new GUIContent("Фиксировать направление по оси Z"));
-        EditorGUILayout.EndVertical();
+        EditorGUILayout.EndVertical();*/
 
-        EditorGUILayout.BeginVertical("box");
+        /*EditorGUILayout.BeginVertical("box");
         GUILayout.Label("Отразить форму:");
         EditorGUI.indentLevel++;
         EditorGUILayout.PropertyField(MirrorFormX, new GUIContent(":X"), GUILayout.MaxWidth(40));
         EditorGUILayout.PropertyField(MirrorFormY, new GUIContent(":Y"), GUILayout.MaxWidth(40));
         EditorGUILayout.PropertyField(MirrorFormZ, new GUIContent(":Z"), GUILayout.MaxWidth(40));
         EditorGUI.indentLevel--;
-        EditorGUILayout.EndVertical();
+        EditorGUILayout.EndVertical();*/
         EditorGUILayout.EndVertical();
 
         EditorGUILayout.BeginVertical("box");

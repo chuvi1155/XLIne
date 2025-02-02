@@ -264,11 +264,11 @@ public class XLinePathPoint : MonoBehaviour
         if (transform.parent == null) return;
         if (!_parentCurve)
             _parentCurve = transform.parent.GetComponent<XLinePathSubLine>();
-        if (!_parentCurve || !_parentCurve.InEditorShowGizmos)
+        if (!_parentCurve || !((IXLinePath)_parentCurve.Parent).InEditorShowGizmos)
             return;
         Gizmos.color = Color.yellow * 2f;
-        if (!ParentCurve.Force2D) Gizmos.DrawSphere(Pos, ParentCurve.Parent.editor_gizmoPointRadius > 0 ? ParentCurve.Parent.editor_gizmoPointRadius * 4f : 0.4f);// Gizmos.DrawIcon(Pos, "dot", true);
-        else Gizmos.DrawSphere(Pos, ParentCurve.Parent.editor_gizmoPointRadius * 2f);
+        if (!ParentCurve.Force2D) Gizmos.DrawSphere(Pos, 0.4f);
+        else Gizmos.DrawSphere(Pos, 2f);
 
         Gizmos.color = Color.gray;
         Gizmos.DrawLine(ForwardPoint, Pos);

@@ -93,14 +93,29 @@ public class XLinePathSegment
 
         return 6 * ((2 * p1 - p0 - p2) * tm1 + (p1 - 2 * p2 + p3) * t);
     }
-    public void GetInterpolatedValues(float t, bool force2D, out Vector3 pos, out Vector3 vel, out Vector3 acc, out Vector3 up)
-    {
-        Vector3 p0 = force2D ? (Vector3)_start.Pos2D : _start.Pos;
-        Vector3 p1 = force2D ? (Vector3)_start.ForwardPoint2D : _start.ForwardPoint;
-        Vector3 p2 = force2D ? (Vector3)_end.BackwardPoint2D : _end.BackwardPoint;
-        Vector3 p3 = force2D ? (Vector3)_end.Pos2D : _end.Pos;
 
+    public void GetInterpolatedValues(float t, bool force2D, out Vector3 pos, out Vector3 vel, out Vector3 right, out Vector3 up)
+    {
+        GetInterpolatedValues(t, force2D, false, out pos, out vel, out right, out up);
+    }
+    public void GetInterpolatedValues(float t, bool force2D, bool localPoints, out Vector3 pos, out Vector3 vel, out Vector3 right, out Vector3 up)
+    {
+        Vector3 p0 = force2D ? (Vector3)_start.Pos2D : localPoints ? _start.LocalPos : _start.Pos;
+        Vector3 p1 = force2D ? (Vector3)_start.ForwardPoint2D : localPoints ? _start.LocalForwardPoint : _start.ForwardPoint;
+        Vector3 p2 = force2D ? (Vector3)_end.BackwardPoint2D : localPoints ? _end.LocalBackwardPoint : _end.BackwardPoint;
+        Vector3 p3 = force2D ? (Vector3)_end.Pos2D : localPoints ? _end.LocalPos : _end.Pos;
+
+
+        if (p1 == Vector3.zero && p2 == Vector3.zero) 
+        {
+            pos = Vector3.Lerp(p0, p3, t);
+            vel = (p3 - p0).normalized;
+            right = Vector3.Lerp(_start.transform.right, _end.transform.right, t);
+            up = Vector3.Lerp(_start.transform.up, _end.transform.up, t);
+            return;
+        }
         t = ConstantT(t);
+
         float t1 = 1.0f - t;
         float t12 = t1 * t1;
         float t2 = t * t;
@@ -111,10 +126,10 @@ public class XLinePathSegment
         vel = 3 * ((p3 - p2) * t2 + (p1 - p0) * t12 + (p1 - p2) * 2 * t * tm1);
         //vel = Vector3.Lerp(_start.transform.forward, _end.transform.forward, t);
         //acc = 6 * ((2 * p1 - p0 - p2) * tm1 + (p1 - 2 * p2 + p3) * t);
-        acc = Vector3.Lerp(_start.transform.right, _end.transform.right, t);
+        right = Vector3.Lerp(_start.transform.right, _end.transform.right, t);
         up = Vector3.Lerp(_start.transform.up, _end.transform.up, t);
     }
-    public void GetInterpolatedValues(float t, bool force2D, out Vector3 pos, out Vector3 vel, out Vector3 acc)
+    public void GetInterpolatedValues(float t, bool force2D, out Vector3 pos, out Vector3 vel, out Vector3 right)
     {
         Vector3 p0 = force2D ? (Vector3)_start.Pos2D : _start.Pos;
         Vector3 p1 = force2D ? (Vector3)_start.ForwardPoint2D : _start.ForwardPoint;
@@ -132,7 +147,7 @@ public class XLinePathSegment
         vel = 3 * ((p3 - p2) * t2 + (p1 - p0) * t12 + (p1 - p2) * 2 * t * tm1);
         //vel = Vector3.Lerp(_start.transform.forward, _end.transform.forward, t);
         //acc = 6 * ((2 * p1 - p0 - p2) * tm1 + (p1 - 2 * p2 + p3) * t);
-        acc = Vector3.Lerp(_start.transform.right, _end.transform.right, t);
+        right = Vector3.Lerp(_start.transform.right, _end.transform.right, t);
     }
 
     public void GetInterpolatedValues(float t, bool force2D, out Vector3 pos, out Vector3 vel)
@@ -247,7 +262,7 @@ public class XLinePathSegment
     }
 
 #if UNITY_EDITOR
-    public void DrawSegmentGizmo(int subdivs, float gizmoPointRadius = 0.2f)
+    public void DrawSegmentGizmo(int subdivs/*, float gizmoPointRadius = 0.2f*/)
     {
         if (_start == null || _end == null) return;
 
@@ -255,15 +270,14 @@ public class XLinePathSegment
         {
             Vector3 p1 = GetPoint((float)i / subdivs, false);
             Vector3 p2 = GetPoint((i + 1f) / subdivs, false);
-            if (gizmoPointRadius > 0)
+            /*if (gizmoPointRadius > 0)
             {
                 Color col = Gizmos.color;
                 Gizmos.color = Color.gray;
                 Gizmos.DrawSphere(p1, gizmoPointRadius);
-                /*if (i == subdivs) */
                 Gizmos.DrawSphere(p2, gizmoPointRadius);
                 Gizmos.color = col; 
-            }
+            }*/
             Gizmos.DrawLine(p1, p2);
         }
     } 

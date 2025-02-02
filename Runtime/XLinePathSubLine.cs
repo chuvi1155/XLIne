@@ -8,16 +8,16 @@ public class XLinePathSubLine : MonoBehaviour
 
     public delegate void XLinePathSubLineChange(XLinePathSubLine subline);
     public event XLinePathSubLineChange OnLineChanged;
-#if UNITY_EDITOR
-    public virtual bool InEditorShowGizmos
-    {
-        get
-        {
-            if (Parent == null) return false;
-            return Parent.editor_inEditorShowGizmos;
-        }
-    }
-#endif
+//#if UNITY_EDITOR
+//    public virtual bool InEditorShowGizmos
+//    {
+//        get
+//        {
+//            if (Parent == null) return false;
+//            return Parent.editor_inEditorShowGizmos;
+//        }
+//    }
+//#endif
     [SerializeField]
     protected bool _isClosed = false;
     public bool IsClosed
@@ -26,17 +26,27 @@ public class XLinePathSubLine : MonoBehaviour
         set
         {
             recalcSegments |= _isClosed != value;
-            //Debug.Log("set IsClosed: " + value);
             _isClosed = value;
         }
     }
     protected float _length = 1.0f;
-    protected int parentPrecision = 50;
+    [SerializeField] private int precision = 50;
+    public int Precision
+    {
+        get => precision;
+        set
+        {
+            if (precision != value)
+            {
+                precision = value;
+                recalcSegments = true;
+            }
+        }
+    }
     public float Length
     {
         get { return _length; }
     }
-    [SerializeField]
     public Color curveColor = Color.white;
     public string PointNamePrefix = "Point_";
     public bool AvtoCorrectPivot = false;
@@ -51,16 +61,16 @@ public class XLinePathSubLine : MonoBehaviour
             if (points == null || points.Length == 0) return new XLinePathSegment[0];
 
             if (recalcSegments ||
-#if UNITY_EDITOR
-        parentPrecision != parent.editor_Precision || 
-#endif
+//#if UNITY_EDITOR
+//        parentPrecision != parent.editor_Precision || 
+//#endif
                 _segments == null)
             {
                 //CorrectPivot();
                 if (parent == null) parent = GetComponentInParent<XLinePath>();
-#if UNITY_EDITOR 
-                parentPrecision = parent.editor_Precision; 
-#endif
+//#if UNITY_EDITOR 
+//                parentPrecision = parent.editor_Precision; 
+//#endif
                 _length = 0;
                 _segments = new XLinePathSegment[IsClosed ? points.Length : points.Length - 1];
                 for (int i = 0; i < _segments.Length; i++)
@@ -73,7 +83,7 @@ public class XLinePathSubLine : MonoBehaviour
                     {
                         _segments[i] = new XLinePathSegment(points[i], i + 1 < points.Length ? points[i + 1] : points[0]);
                     }
-                    _segments[i].SegmentPartsCount = parentPrecision;
+                    _segments[i].SegmentPartsCount = precision;//parentPrecision;
                     _segments[i].Recalculate(Force2D);
                     _length += _segments[i].length;
                 }
@@ -174,9 +184,9 @@ public class XLinePathSubLine : MonoBehaviour
     {
         if (parent == null) parent = GetComponentInParent<XLinePath>(true);
         points = GetComponentsInChildren<XLinePathPoint>();
-#if UNITY_EDITOR
-        parentPrecision = parent.editor_Precision; 
-#endif
+//#if UNITY_EDITOR
+//        parentPrecision = parent.editor_Precision; 
+//#endif
         _length = 0;
         _segments = new XLinePathSegment[IsClosed ? points.Length : points.Length - 1];
         for (int i = 0; i < _segments.Length; i++)
@@ -192,7 +202,7 @@ public class XLinePathSubLine : MonoBehaviour
                 if (!string.IsNullOrEmpty(PointNamePrefix)) points[i].name = PointNamePrefix + i;
                 _segments[i] = new XLinePathSegment(points[i], i + 1 < points.Length ? points[i + 1] : points[0]);
             }
-            _segments[i].SegmentPartsCount = parentPrecision;
+            _segments[i].SegmentPartsCount = precision;//parentPrecision;
             _segments[i].Recalculate(Force2D);
             _length += _segments[i].length;
         }
@@ -235,7 +245,8 @@ public class XLinePathSubLine : MonoBehaviour
 
     public XLinePathPoint[] GetPoints()
     {
-        points = GetComponentsInChildren<XLinePathPoint>();
+        if(points == null || points.Length == 0 || recalcSegments)
+            points = GetComponentsInChildren<XLinePathPoint>();
         return points;
     }
 
@@ -270,6 +281,10 @@ public class XLinePathSubLine : MonoBehaviour
     }
     public float GetInterpolatedValues(float dist, out Vector3 pos, out Vector3 vel, out Vector3 acc, out Vector3 up)
     {
+        return GetInterpolatedValues(dist, false, out pos, out vel, out acc, out up);
+    }
+    public float GetInterpolatedValues(float dist, bool localPoints, out Vector3 pos, out Vector3 vel, out Vector3 acc, out Vector3 up)
+    {
         if (recalcSegments)
         {
             Recalculate();
@@ -281,7 +296,8 @@ public class XLinePathSubLine : MonoBehaviour
 
         //while (dist < 0)
         //    dist += Length;
-        dist = Mathf.Repeat(dist, Length);
+        if(dist > Length || dist < 0)
+            dist = Mathf.Repeat(dist, Length);
 
 
         for (int i = 0; i < Segments.Length; i++)
@@ -292,12 +308,11 @@ public class XLinePathSubLine : MonoBehaviour
             {
 
                 float t = (dist - prevlen) / Segments[i].length;
-
-                Segments[i].GetInterpolatedValues(t, Force2D, out pos, out vel, out acc, out up);
+                Segments[i].GetInterpolatedValues(t, Force2D, localPoints, out pos, out vel, out acc, out up);
                 return dist;
             }
         }
-        Segments[Segments.Length - 1].GetInterpolatedValues(1, Force2D, out pos, out vel, out acc, out up);
+        Segments[Segments.Length - 1].GetInterpolatedValues(1, Force2D, localPoints, out pos, out vel, out acc, out up);
         return dist;
     }
 
@@ -375,7 +390,7 @@ public class XLinePathSubLine : MonoBehaviour
 
         if (parent == null) parent = GetComponentInParent<XLinePath>();
 #if UNITY_EDITOR
-        int steps = Segments.Length * parent.editor_Precision;
+        int steps = Segments.Length * ((IXLinePath)parent).Precision;
 #else
         int steps = Segments.Length * 50; 
 #endif
@@ -539,7 +554,7 @@ public class XLinePathSubLine : MonoBehaviour
     }
 
 #if UNITY_EDITOR
-    public void DrawSegmentGizmo(int subdivs, float gizmoPointRadius = 0.2f)
+    public void DrawSegmentGizmo(int subdivs/*, float gizmoPointRadius = 0.2f*/)
     {
         /*if (points == null || points.Length == 0) */
         points = GetComponentsInChildren<XLinePathPoint>();
@@ -549,7 +564,7 @@ public class XLinePathSubLine : MonoBehaviour
         Gizmos.color = curveColor;
         for (int i = 0; i < Segments.Length; i++)
         {
-            Segments[i].DrawSegmentGizmo(subdivs, gizmoPointRadius);
+            Segments[i].DrawSegmentGizmo(subdivs/*, gizmoPointRadius*/);
         }
         Gizmos.color = col;
     } 

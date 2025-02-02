@@ -1,7 +1,7 @@
 {
   "name": "com.chuvi.xlines",
   "displayName": "XLines",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "unity": "2018.1",
   "description": "Lines bezier extensions",
   "author": {
@@ -10,6 +10,6 @@
     "url": ""
   },
   "type": "tool",
-  "gitDependencies": {
-  }
+  "gitDependencies": {},
+  "_fingerprint": "ef3762a487d22256b70d1e853190c7c32cff4610"
 }

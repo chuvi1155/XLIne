@@ -223,11 +223,11 @@ class FenceEditor : Editor
             fence.Offset = EditorGUILayout.Vector3Field("Смещен. формы", fence.Offset);
             fence.RotateForm = EditorGUILayout.Vector3Field("Вращать форму", fence.RotateForm);
 
-            EditorGUILayout.BeginVertical("box");
+            /*EditorGUILayout.BeginVertical("box");
             fence.FixedX = GUILayout.Toggle(fence.FixedX, "Фиксировать направление по оси X");
             fence.FixedY = GUILayout.Toggle(fence.FixedY, "Фиксировать направление по оси Y");
             fence.FixedZ = GUILayout.Toggle(fence.FixedZ, "Фиксировать направление по оси Z");
-            EditorGUILayout.EndVertical();
+            EditorGUILayout.EndVertical();*/
 
             GUILayout.Label("Отразить форму:");
             EditorGUILayout.BeginHorizontal();
