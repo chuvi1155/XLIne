@@ -25,7 +25,7 @@ public class SplineLoft : MonoBehaviour
     public bool IsSmooth = true;
     public Vector3 RotateForm;
     public bool ShowInEditor;
-    public bool SetPathByPoints = false;
+    //public bool SetPathByPoints = false;
     public bool SetFormByPoints = false;
     public Vector2 Tiling = Vector2.one;
     /*[SerializeField] bool FixedX = false;
