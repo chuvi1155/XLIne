@@ -183,8 +183,8 @@ class FenceEditor : Editor
         pathFoldout = EditorGUILayout.Foldout(pathFoldout, "Настройка пути");
         if (pathFoldout)
         {
-            fence.SetPathByPoints = GUILayout.Toggle(fence.SetPathByPoints, "По точкам");
-            if (!fence.SetPathByPoints)
+           /* fence.SetPathByPoints = GUILayout.Toggle(fence.SetPathByPoints, "По точкам");
+            if (!fence.SetPathByPoints)*/
             {
                 fence.PathQuality = EditorGUILayout.IntField("Детал. пути", fence.PathQuality);
             }
