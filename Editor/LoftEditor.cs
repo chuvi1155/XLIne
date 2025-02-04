@@ -75,7 +75,7 @@ class LoftEditor : Editor
     SerializedProperty material;
     /*SerializedProperty Form2D;*/
     SerializedProperty UseCanvasRenderer;
-    SerializedProperty SetPathByPoints;
+    //SerializedProperty SetPathByPoints;
     SerializedProperty PathQuality;
     SerializedProperty SetFormByPoints;
     SerializedProperty FormQuality;
@@ -107,7 +107,7 @@ class LoftEditor : Editor
         material = serializedObject.FindProperty("material");
         /*Form2D = serializedObject.FindProperty("Form2D");*/
         UseCanvasRenderer = serializedObject.FindProperty("UseCanvasRenderer");
-        SetPathByPoints = serializedObject.FindProperty("SetPathByPoints");
+        //SetPathByPoints = serializedObject.FindProperty("SetPathByPoints");
         PathQuality = serializedObject.FindProperty("PathQuality");
         SetFormByPoints = serializedObject.FindProperty("SetFormByPoints");
         FormQuality = serializedObject.FindProperty("FormQuality");
@@ -154,8 +154,8 @@ class LoftEditor : Editor
         /*if(Form2D.boolValue)
             EditorGUILayout.PropertyField(UseCanvasRenderer, new GUIContent("Use CanvasRenderer"));*/
 
-        EditorGUILayout.PropertyField(SetPathByPoints, new GUIContent("Путь по точкам"));
-        if(!SetPathByPoints.boolValue)
+        /*EditorGUILayout.PropertyField(SetPathByPoints, new GUIContent("Путь по точкам"));
+        if(!SetPathByPoints.boolValue)*/
             EditorGUILayout.PropertyField(PathQuality, new GUIContent("Детал. пути"));
 
         EditorGUILayout.PropertyField(SetFormByPoints, new GUIContent("Форма по точкам"));
