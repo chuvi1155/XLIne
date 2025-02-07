@@ -430,26 +430,31 @@ public class SplineLoft : MonoBehaviour
 
         Vector3 pathPos = Form2D ? (Vector3)GetComponent<RectTransform>().anchoredPosition : transform.position;
         Vector3[][] formFrameVerts = new Vector3[PathQuality + 1][];
+        Vector2[][] formFrameUVs_detailed = new Vector2[PathQuality + 1][];
         Vector2[][] formFrameUVs = new Vector2[PathQuality + 1][];
         float[] formFrameLengths = new float[pointsForm.Length];
+        var len = sl.Length;
         for (int i = 0; i < PathQuality + 1; i++)
         {
             formFrameVerts[i] = new Vector3[pointsForm.Length];
+            formFrameUVs_detailed[i] = new Vector2[pointsForm.Length];
             formFrameUVs[i] = new Vector2[pointsForm.Length];
-
-            sl.GetInterpolatedValues(step * i, out var pos, out var vel, out var acc, out var up);
+            var dist = step * i;
+            sl.GetInterpolatedValues(dist, out var pos, out var vel, out var acc, out var up);
             var mat = Matrix4x4.TRS(pos - pathPos, Quaternion.LookRotation(vel.normalized, up), Vector3.one);
-
+            var uv1_y = dist / len;
             for (int n = 0; n < pointsForm.Length; n++)
             {
                 formFrameVerts[i][n] = mat.MultiplyPoint(pointsForm[n]);
+
+                formFrameUVs[i][n] = new Vector2(uvx[n], uv1_y);
                 if (i == 0)
-                    formFrameUVs[i][n] = new Vector2(uvx[n], 0); // temp by Y set distance between previews point
+                    formFrameUVs_detailed[i][n] = new Vector2(uvx[n], 0); // temp by Y set distance between previews point
                 else
                 {
                     var d = Vector3.Distance(formFrameVerts[i][n], formFrameVerts[i - 1][n]); // calculate full length by each form pointline
                     formFrameLengths[n] += d;
-                    formFrameUVs[i][n] = new Vector2(uvx[n], formFrameLengths[n]); // temp by Y set distance between previews point
+                    formFrameUVs_detailed[i][n] = new Vector2(uvx[n], formFrameLengths[n]); // temp by Y set distance between previews point
                 }
             }
         }
@@ -458,9 +463,9 @@ public class SplineLoft : MonoBehaviour
         {
             for (int n = 0; n < pointsForm.Length; n++)
             {
-                var uv = formFrameUVs[i][n];
+                var uv = formFrameUVs_detailed[i][n];
                 uv.y = uv.y / (formFrameLengths[n] / Tiling.y);
-                formFrameUVs[i][n] = uv;
+                formFrameUVs_detailed[i][n] = uv;
             }
         }
 
@@ -515,10 +520,10 @@ public class SplineLoft : MonoBehaviour
                 });
                 uvs1.AddRange(new Vector2[]
                 {
-                    formFrameUVs[i][n],
-                    formFrameUVs[i][n + 1],
-                    formFrameUVs[i + 1][n + 1],
-                    formFrameUVs[i + 1][n]
+                    formFrameUVs_detailed[i][n],
+                    formFrameUVs_detailed[i][n + 1],
+                    formFrameUVs_detailed[i + 1][n + 1],
+                    formFrameUVs_detailed[i + 1][n]
                 });
 
                 /*Vector3 norm;
