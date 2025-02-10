@@ -566,7 +566,7 @@ public class SplineLoft : MonoBehaviour
         res.SetVertices(verts);
         res.SetUVs(0, uvs);
         //Debug.Log(string.Join(" ", uvs));
-        //res.SetUVs(1, uvs1);
+        res.SetUVs(1, uvs1);
         res.SetIndices(indx.ToArray(), MeshTopology.Triangles, 0);
 
         if (IsSmooth)
