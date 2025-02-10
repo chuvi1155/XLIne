@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 public class XLinePathSegment
 {
@@ -106,7 +106,7 @@ public class XLinePathSegment
         Vector3 p3 = force2D ? (Vector3)_end.Pos2D : localPoints ? _end.LocalPos : _end.Pos;
 
 
-        if (p1 == Vector3.zero && p2 == Vector3.zero) 
+        if (p1 == p0 && p2 == p3) 
         {
             pos = Vector3.Lerp(p0, p3, t);
             vel = (p3 - p0).normalized;
