@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections;
 
 [AddComponentMenu("Chuvi/Line/XLinePathPoint")]
@@ -15,6 +15,10 @@ public class XLinePathPoint : MonoBehaviour
     public void Awake()
     {
         _thisTransform = transform;
+#if UNITY_EDITOR
+        oldPos = _thisTransform.position;
+        oldRot = _thisTransform.localRotation; 
+#endif
     }
 
     private bool _isDirty = true;
@@ -24,7 +28,7 @@ public class XLinePathPoint : MonoBehaviour
         get { return _isDirty; }
         set
         {
-            if(ParentCurve != null && _isDirty != value) ParentCurve.SetDirty();
+            if(ParentCurve != null && _isDirty != value && value) ParentCurve.SetDirty();
             _isDirty = value;
         }
     }
@@ -276,7 +280,7 @@ public class XLinePathPoint : MonoBehaviour
 
         if (oldPos != transform.position || oldRot != transform.localRotation || IsDirty)
         {
-            ParentCurve.SetDirty();
+            //ParentCurve.SetDirty();
             IsDirty = false;
         }
         oldPos = transform.position;
