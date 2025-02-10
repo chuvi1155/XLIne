@@ -440,7 +440,7 @@ public class SplineLoft : MonoBehaviour
             formFrameUVs_detailed[i] = new Vector2[pointsForm.Length];
             formFrameUVs[i] = new Vector2[pointsForm.Length];
             var dist = step * i;
-            sl.GetInterpolatedValues(dist, out var pos, out var vel, out var acc, out var up);
+            sl.GetInterpolatedValues(dist, out var pos, out var vel, out var acc, out var up, true);
             var mat = Matrix4x4.TRS(pos - pathPos, Quaternion.LookRotation(vel.normalized, up), Vector3.one);
             var uv1_y = dist / len;
             for (int n = 0; n < pointsForm.Length; n++)
@@ -611,7 +611,7 @@ public class SplineLoft : MonoBehaviour
             for (int i = 0; i < FormQuality + 1; i++)
             {
                 uvx[i] = (step * i) / (sl.Length / Tiling.x);
-                sl.GetInterpolatedValues(step * i, out var pos, out var _, out var _, out var _);
+                sl.GetInterpolatedValues(step * i, out var pos, out var _, out var _, out var _, true);
                 pos = sl.transform.InverseTransformPoint(pos + Offset);
                 pos.x *= MirrorFormX ? -1 : 1;
                 pos.y *= MirrorFormY ? -1 : 1;
@@ -1516,10 +1516,15 @@ public class SplineLoft : MonoBehaviour
 
         var verts = filter.sharedMesh.vertices;
         var normals = filter.sharedMesh.normals;
+        var tangents = filter.sharedMesh.tangents;
         for (int i = 0; i < normals.Length; i++)
         {
+            Gizmos.color = Color.white;
             var pos = transform.TransformPoint(verts[i]);
             var dir = transform.TransformDirection(normals[i]);
+            Gizmos.DrawRay(pos, dir);
+            Gizmos.color = Color.blue;
+            dir = transform.TransformDirection(tangents[i]);
             Gizmos.DrawRay(pos, dir);
         }*/
     }
