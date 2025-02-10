@@ -30,7 +30,8 @@ public class XLinePath : MonoBehaviour, IXLinePath
             isDirty = false;
             return d;
         }
-        set => isDirty = value; }
+        set => isDirty = value;
+    }
 
     int IXLinePath.Precision =>
 #if UNITY_EDITOR
