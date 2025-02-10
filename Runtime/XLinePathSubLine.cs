@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections.Generic;
 
 [ExecuteInEditMode]
@@ -250,7 +250,7 @@ public class XLinePathSubLine : MonoBehaviour
         return points;
     }
 
-    public Vector3 GetInterpolatedPoint(float dist)
+    public Vector3 GetInterpolatedPoint(float dist, bool clamped = false)
     {
         if (recalcSegments)
         {
@@ -258,11 +258,16 @@ public class XLinePathSubLine : MonoBehaviour
         }
         float prevlen = 0f;
         float len = 0f;
-        while (dist >= Length)
-            dist -= Length;
+        //while (dist >= Length)
+        //    dist -= Length;
 
-        while (dist < 0)
-            dist += Length;
+        //while (dist < 0)
+        //    dist += Length;
+        if (!clamped && (dist > Length || dist < 0))
+            dist = Mathf.Repeat(dist, Length);
+        else if (clamped && dist > Length)
+            dist = Length;
+
 
 
         for (int i = 0; i < Segments.Length; i++)
@@ -279,11 +284,11 @@ public class XLinePathSubLine : MonoBehaviour
         }
         return Segments[Segments.Length - 1].GetInterpolatedPoint(1, Force2D);
     }
-    public float GetInterpolatedValues(float dist, out Vector3 pos, out Vector3 vel, out Vector3 acc, out Vector3 up)
+    public float GetInterpolatedValues(float dist, out Vector3 pos, out Vector3 vel, out Vector3 acc, out Vector3 up, bool clamped = false)
     {
-        return GetInterpolatedValues(dist, false, out pos, out vel, out acc, out up);
+        return GetInterpolatedValues(dist, false, out pos, out vel, out acc, out up, clamped);
     }
-    public float GetInterpolatedValues(float dist, bool localPoints, out Vector3 pos, out Vector3 vel, out Vector3 acc, out Vector3 up)
+    public float GetInterpolatedValues(float dist, bool localPoints, out Vector3 pos, out Vector3 vel, out Vector3 acc, out Vector3 up, bool clamped = false)
     {
         if (recalcSegments)
         {
@@ -296,8 +301,10 @@ public class XLinePathSubLine : MonoBehaviour
 
         //while (dist < 0)
         //    dist += Length;
-        if(dist > Length || dist < 0)
+        if(!clamped && (dist > Length || dist < 0))
             dist = Mathf.Repeat(dist, Length);
+        else if (clamped && dist > Length)
+            dist = Length;
 
 
         for (int i = 0; i < Segments.Length; i++)
