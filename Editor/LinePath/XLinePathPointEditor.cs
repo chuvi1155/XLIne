@@ -7,7 +7,9 @@ public class XLinePathPointEditor : Editor
     public override void OnInspectorGUI()
     {
         XLinePathPoint point = (target as XLinePathPoint);
-        bool is2d = point.GetComponent<RectTransform>() != null;
+        bool is2d = point.ParentCurve.Force2D;
+        if (!is2d && point.GetComponent<RectTransform>() != null)
+            point.gameObject.AddComponent<Transform>();
         GUILayout.BeginHorizontal();
         {
             EditorGUILayout.PrefixLabel("Is Smooth");
