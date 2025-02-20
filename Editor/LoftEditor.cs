@@ -47,7 +47,7 @@ class LoftEditor : Editor
                         return;
                     }
                     main.name = gos[0].name.Substring(0, gos[0].name.IndexOf("_")) + "_LoftObject";
-                    sl.InitLoft();
+                    sl.Init();
                     Selection.activeGameObject = main;
                 }
                 else
@@ -96,6 +96,9 @@ class LoftEditor : Editor
     SerializedProperty InvertFace;
     SerializedProperty IsSmooth;
     SerializedProperty Tiling;
+    SerializedProperty _calculateLightmapsUVs;
+    SerializedProperty sublineIndex;
+    SerializedProperty distortPoints;
 
     void OnEnable()
     {
@@ -119,15 +122,12 @@ class LoftEditor : Editor
         Scale = serializedObject.FindProperty("Scale");
         Offset = serializedObject.FindProperty("Offset");
         RotateForm = serializedObject.FindProperty("RotateForm");
-        /*FixedX = serializedObject.FindProperty("FixedX");
-        FixedY = serializedObject.FindProperty("FixedY");
-        FixedZ = serializedObject.FindProperty("FixedZ");*/
-        /*MirrorFormX = serializedObject.FindProperty("MirrorFormX");
-        MirrorFormY = serializedObject.FindProperty("MirrorFormY");
-        MirrorFormZ = serializedObject.FindProperty("MirrorFormZ");*/
         InvertFace = serializedObject.FindProperty("InvertFace");
         IsSmooth = serializedObject.FindProperty("IsSmooth");
         Tiling = serializedObject.FindProperty("Tiling");
+        _calculateLightmapsUVs = serializedObject.FindProperty("_calculateLightmapsUVs");
+        sublineIndex = serializedObject.FindProperty("sublineIndex");
+        distortPoints = serializedObject.FindProperty("distortPoints");
         if (loft == null)
             loft = target as SplineLoft;
     }
@@ -144,7 +144,16 @@ class LoftEditor : Editor
         EditorGUILayout.PropertyField(CurvePath, new GUIContent("Путь"));
         var line = CurvePath.objectReferenceValue as XLinePath;
         if (line != null && line.Sublines != null && line.Sublines.Count > 1)
-            EditorGUILayout.PropertyField(mergeSubForms, new GUIContent("Merge sub-line Forms"));
+        {
+            EditorGUI.indentLevel++;
+            EditorGUILayout.PropertyField(sublineIndex, new GUIContent("Subline Index"));
+            if (sublineIndex.intValue >= line.Sublines.Count)
+                sublineIndex.intValue = line.Sublines.Count - 1;
+            else if (sublineIndex.intValue < 0)
+                sublineIndex.intValue = 0;
+            EditorGUI.indentLevel--;
+        }
+        //EditorGUILayout.PropertyField(mergeSubForms, new GUIContent("Merge sub-line Forms"));
 
         EditorGUI.indentLevel++;
         EditorGUILayout.PropertyField(material, new GUIContent("Materials"));
@@ -198,6 +207,11 @@ class LoftEditor : Editor
         EditorGUILayout.PropertyField(InvertFace, new GUIContent("Инвертирование лицевой стороны"));
         EditorGUILayout.PropertyField(IsSmooth, new GUIContent("Сглаживание"));
         EditorGUILayout.PropertyField(Tiling, new GUIContent("Tiling"));
+        EditorGUILayout.PropertyField(_calculateLightmapsUVs, new GUIContent("Calculate Lightmaps UVs"));
+        EditorGUILayout.EndVertical();
+
+        EditorGUILayout.BeginVertical("box");
+        EditorGUILayout.PropertyField(distortPoints, new GUIContent("Path Distortions"));
         EditorGUILayout.EndVertical();
 
         EditorGUILayout.Space();
@@ -207,14 +221,14 @@ class LoftEditor : Editor
         if (GUILayout.Button("Сброс"))
         {
             loft.isInitOK = false;
-            loft.InitLoft();
+            loft.Init();
             EditorUtility.SetDirty(loft);
         }
         else if(GUI.changed)
         {
-            Debug.Log("GUI changed");
+            //Debug.Log("GUI changed");
             loft.isInitOK = false;
-            loft.InitLoft();
+            loft.Init();
             EditorUtility.SetDirty(loft);
         }
     }

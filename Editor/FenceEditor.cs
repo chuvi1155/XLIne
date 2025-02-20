@@ -60,7 +60,7 @@ class FenceEditor : Editor
                         return null;
                     }
                     main.name = namePath + "_FenceObject";
-                    sl.InitLoft();
+                    sl.Init();
                     Selection.activeGameObject = main;
                     return sl;
                 }
@@ -114,7 +114,7 @@ class FenceEditor : Editor
             return null;
         }
         main.name = namePath + "_FenceObject";
-        sl.InitLoft();
+        sl.Init();
         Selection.activeGameObject = main;
         return sl;
     }
@@ -313,13 +313,13 @@ class FenceEditor : Editor
         if (GUI.changed /*|| Fix*/)
         {
             if (fence.isInitOK) fence.UpdateMesh();
-            else fence.InitLoft();
+            else fence.Init();
             EditorUtility.SetDirty(fence);
         }
         if (GUILayout.Button("Обновить"))
         {
             fence.isInitOK = false;
-            fence.InitLoft();
+            fence.Init();
             EditorUtility.SetDirty(fence);
         }
         if (GUILayout.Button("Сгенерировать столбы"))

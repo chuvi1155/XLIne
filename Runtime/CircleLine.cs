@@ -7,22 +7,43 @@ using UnityEditor;
 [CustomEditor(typeof(CircleLine))]
 public class CircleLineEditor : Editor
 {
+    SerializedProperty PointNamePrefix;
+    SerializedProperty Force2D;
+    SerializedProperty curveColor;
+    SerializedProperty _radius;
+
+    private void OnEnable()
+    {
+        PointNamePrefix = serializedObject.FindProperty("PointNamePrefix");
+        Force2D = serializedObject.FindProperty("_force2D");
+        curveColor = serializedObject.FindProperty("_curveColor");
+        _radius = serializedObject.FindProperty("_radius");
+    }
+
     public override void OnInspectorGUI()
     {
         CircleLine _target = target as CircleLine;
+        serializedObject.Update();
 
+        //_target.PointNamePrefix = EditorGUILayout.TextField("PointNamePrefix", _target.PointNamePrefix);
+        //_target.Force2D = EditorGUILayout.Toggle("Force 2D:", _target.Force2D);
+        EditorGUILayout.PropertyField(PointNamePrefix);
+        EditorGUILayout.PropertyField(Force2D, new GUIContent("Force 2D:"));
 
-        _target.PointNamePrefix = EditorGUILayout.TextField("PointNamePrefix", _target.PointNamePrefix);
-        _target.Force2D = EditorGUILayout.Toggle("Force 2D:", _target.Force2D);
         EditorGUILayout.BeginHorizontal();
         {
             Undo.RecordObject(_target, "Zero Transform Position");
             EditorGUILayout.PrefixLabel("Color:");
-            _target.curveColor = EditorGUILayout.ColorField(_target.curveColor);
+            //_target.curveColor = EditorGUILayout.ColorField(_target.curveColor);
+            EditorGUILayout.PropertyField(curveColor);
         }
         EditorGUILayout.EndHorizontal();
 
-        _target.Radius = EditorGUILayout.FloatField("Radius", _target.Radius);
+        //_target.Radius = EditorGUILayout.FloatField("Radius", _target.Radius);
+        EditorGUILayout.PropertyField(_radius);
+
+        serializedObject.ApplyModifiedProperties();
+
         if (_target.IsDirty)
             _target.Recalculate();
         EditorGUILayout.LabelField("  Curve Length: ", _target.Length.ToString("f2"));
@@ -33,7 +54,7 @@ public class CircleLineEditor : Editor
 [AddComponentMenu("Chuvi/Line/Circle")]
 public class CircleLine : XLinePathSubLine
 {
-    float _radius = 1;
+    [SerializeField] float _radius = 1;
     public float Radius
     {
         get { return _radius; }
@@ -47,16 +68,6 @@ public class CircleLine : XLinePathSubLine
             else _radius = value;
         }
     }
-
-//#if UNITY_EDITOR
-//    public override bool InEditorShowGizmos
-//    {
-//        get
-//        {
-//            return false;
-//        }
-//    } 
-//#endif
 
     public override void Init()
     {
@@ -102,9 +113,6 @@ public class CircleLine : XLinePathSubLine
             }
         }
 
-//#if UNITY_EDITOR
-//        parentPrecision = parent.editor_Precision; 
-//#endif
         _length = 0;
         _segments = new XLinePathSegment[4];
         for (int i = 0; i < _segments.Length; i++)

@@ -41,8 +41,8 @@ public class XLinePathSegment
     {
         bool is2D = _start.ThisRectTransform != null;
         Vector3 p0 = is2D ? (Vector3)_start.Pos2D : _start.LocalPos;
-        Vector3 p1 = is2D ? (Vector3)_start.ForwardPoint2D : _start.LocalForwardPoint;
-        Vector3 p2 = is2D ? (Vector3)_end.BackwardPoint2D : _end.LocalBackwardPoint;
+        Vector3 p1 = is2D ? (Vector3)_start.WorldForwardPoint2D : _start.LocalForwardPoint;
+        Vector3 p2 = is2D ? (Vector3)_end.WorldBackwardPoint2D : _end.LocalBackwardPoint;
         Vector3 p3 = is2D ? (Vector3)_end.Pos2D : _end.LocalPos;
 
         t = ConstantT(t);
@@ -55,8 +55,8 @@ public class XLinePathSegment
     public Vector3 GetInterpolatedPoint(float t, bool force2D = false)
     {
         Vector3 p0 = force2D ? (Vector3)_start.Pos2D : _start.Pos;
-        Vector3 p1 = force2D ? (Vector3)_start.ForwardPoint2D : _start.ForwardPoint;
-        Vector3 p2 = force2D ? (Vector3)_end.BackwardPoint2D : _end.BackwardPoint;
+        Vector3 p1 = force2D ? (Vector3)_start.WorldForwardPoint2D : _start.WorldForwardPoint;
+        Vector3 p2 = force2D ? (Vector3)_end.WorldBackwardPoint2D : _end.WorldBackwardPoint;
         Vector3 p3 = force2D ? (Vector3)_end.Pos2D : _end.Pos;
 
         t = ConstantT(t);
@@ -69,8 +69,8 @@ public class XLinePathSegment
     public Vector3 GetInterpolatedVelocity(float t, bool force2D = false)
     {
         Vector3 p0 = force2D ? (Vector3)_start.Pos2D : _start.Pos;
-        Vector3 p1 = force2D ? (Vector3)_start.ForwardPoint2D : _start.ForwardPoint;
-        Vector3 p2 = force2D ? (Vector3)_end.BackwardPoint2D : _end.BackwardPoint;
+        Vector3 p1 = force2D ? (Vector3)_start.WorldForwardPoint2D : _start.WorldForwardPoint;
+        Vector3 p2 = force2D ? (Vector3)_end.WorldBackwardPoint2D : _end.WorldBackwardPoint;
         Vector3 p3 = force2D ? (Vector3)_end.Pos2D : _end.Pos;
 
         t = ConstantT(t);
@@ -84,8 +84,8 @@ public class XLinePathSegment
     public Vector3 GetInterpolatedAcceleration(float t, bool force2D = false)
     {
         Vector3 p0 = force2D ? (Vector3)_start.Pos2D : _start.Pos;
-        Vector3 p1 = force2D ? (Vector3)_start.ForwardPoint2D : _start.ForwardPoint;
-        Vector3 p2 = force2D ? (Vector3)_end.BackwardPoint2D : _end.BackwardPoint;
+        Vector3 p1 = force2D ? (Vector3)_start.WorldForwardPoint2D : _start.WorldForwardPoint;
+        Vector3 p2 = force2D ? (Vector3)_end.WorldBackwardPoint2D : _end.WorldBackwardPoint;
         Vector3 p3 = force2D ? (Vector3)_end.Pos2D : _end.Pos;
 
         t = ConstantT(t);
@@ -101,8 +101,8 @@ public class XLinePathSegment
     public void GetInterpolatedValues(float t, bool force2D, bool localPoints, out Vector3 pos, out Vector3 vel, out Vector3 right, out Vector3 up)
     {
         Vector3 p0 = force2D ? (Vector3)_start.Pos2D : localPoints ? _start.LocalPos : _start.Pos;
-        Vector3 p1 = force2D ? (Vector3)_start.ForwardPoint2D : localPoints ? _start.LocalForwardPoint : _start.ForwardPoint;
-        Vector3 p2 = force2D ? (Vector3)_end.BackwardPoint2D : localPoints ? _end.LocalBackwardPoint : _end.BackwardPoint;
+        Vector3 p1 = force2D ? (Vector3)_start.WorldForwardPoint2D : localPoints ? _start.LocalForwardPoint : _start.WorldForwardPoint;
+        Vector3 p2 = force2D ? (Vector3)_end.WorldBackwardPoint2D : localPoints ? _end.LocalBackwardPoint : _end.WorldBackwardPoint;
         Vector3 p3 = force2D ? (Vector3)_end.Pos2D : localPoints ? _end.LocalPos : _end.Pos;
 
 
@@ -110,8 +110,8 @@ public class XLinePathSegment
         {
             pos = Vector3.Lerp(p0, p3, t);
             vel = (p3 - p0).normalized;
-            right = Vector3.Lerp(_start.transform.right, _end.transform.right, t);
-            up = Vector3.Lerp(_start.transform.up, _end.transform.up, t);
+            right = Vector3.Lerp(_start.ThisTransform.right, _end.ThisTransform.right, t);
+            up = Vector3.Lerp(_start.ThisTransform.up, _end.ThisTransform.up, t);
             return;
         }
         t = ConstantT(t);
@@ -126,14 +126,14 @@ public class XLinePathSegment
         vel = 3 * ((p3 - p2) * t2 + (p1 - p0) * t12 + (p1 - p2) * 2 * t * tm1);
         //vel = Vector3.Lerp(_start.transform.forward, _end.transform.forward, t);
         //acc = 6 * ((2 * p1 - p0 - p2) * tm1 + (p1 - 2 * p2 + p3) * t);
-        right = Vector3.Lerp(_start.transform.right, _end.transform.right, t);
-        up = Vector3.Lerp(_start.transform.up, _end.transform.up, t);
+        right = Vector3.Lerp(_start.ThisTransform.right, _end.ThisTransform.right, t);
+        up = Vector3.Lerp(_start.ThisTransform.up, _end.ThisTransform.up, t);
     }
     public void GetInterpolatedValues(float t, bool force2D, out Vector3 pos, out Vector3 vel, out Vector3 right)
     {
         Vector3 p0 = force2D ? (Vector3)_start.Pos2D : _start.Pos;
-        Vector3 p1 = force2D ? (Vector3)_start.ForwardPoint2D : _start.ForwardPoint;
-        Vector3 p2 = force2D ? (Vector3)_end.BackwardPoint2D : _end.BackwardPoint;
+        Vector3 p1 = force2D ? (Vector3)_start.WorldForwardPoint2D : _start.WorldForwardPoint;
+        Vector3 p2 = force2D ? (Vector3)_end.WorldBackwardPoint2D : _end.WorldBackwardPoint;
         Vector3 p3 = force2D ? (Vector3)_end.Pos2D : _end.Pos;
 
         t = ConstantT(t);
@@ -153,8 +153,8 @@ public class XLinePathSegment
     public void GetInterpolatedValues(float t, bool force2D, out Vector3 pos, out Vector3 vel)
     { 
         Vector3 p0 = force2D ? (Vector3)_start.Pos2D : _start.Pos;
-        Vector3 p1 = force2D ? (Vector3)_start.ForwardPoint2D : _start.ForwardPoint;
-        Vector3 p2 = force2D ? (Vector3)_end.BackwardPoint2D : _end.BackwardPoint;
+        Vector3 p1 = force2D ? (Vector3)_start.WorldForwardPoint2D : _start.WorldForwardPoint;
+        Vector3 p2 = force2D ? (Vector3)_end.WorldBackwardPoint2D : _end.WorldBackwardPoint;
         Vector3 p3 = force2D ? (Vector3)_end.Pos2D : _end.Pos;
 
         t = ConstantT(t);
@@ -171,8 +171,8 @@ public class XLinePathSegment
     public Vector3 GetPoint(float t, bool force2D)
     {
         Vector3 p0 = force2D ? (Vector3)_start.Pos2D : _start.Pos;
-        Vector3 p1 = force2D ? (Vector3)_start.ForwardPoint2D : _start.ForwardPoint;
-        Vector3 p2 = force2D ? (Vector3)_end.BackwardPoint2D : _end.BackwardPoint;
+        Vector3 p1 = force2D ? (Vector3)_start.WorldForwardPoint2D : _start.WorldForwardPoint;
+        Vector3 p2 = force2D ? (Vector3)_end.WorldBackwardPoint2D : _end.WorldBackwardPoint;
         Vector3 p3 = force2D ? (Vector3)_end.Pos2D : _end.Pos;
 
         float tinv = 1.0f - t;
@@ -185,7 +185,7 @@ public class XLinePathSegment
         float t1 = 1.0f - t;
         float t12 = t1 * t1;
         float t2 = t * t;
-        return t1 * t12 * _start.Pos2D + 3f * (t * t12 * _start.ForwardPoint2D + t2 * t1 * _end.BackwardPoint2D) + t2 * t * _end.Pos2D;
+        return t1 * t12 * _start.Pos2D + 3f * (t * t12 * _start.WorldForwardPoint2D + t2 * t1 * _end.WorldBackwardPoint2D) + t2 * t * _end.Pos2D;
     }
     public void Recalculate(bool force2D)
     {
@@ -209,7 +209,8 @@ public class XLinePathSegment
             _segments[i].len = len;
             _segments[i].T = t2;
         }
-
+        _start.IsDirty = false;
+        _end.IsDirty = false;
         length = len;
     }
 

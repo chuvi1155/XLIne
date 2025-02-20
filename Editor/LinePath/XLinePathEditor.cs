@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
@@ -8,13 +6,11 @@ public class XLinePathEditor : Editor
 {
     SerializedProperty editor_Precision;
     SerializedProperty editor_inEditorShowGizmos;
-    //SerializedProperty editor_gizmoPointRadius;
 
     private void OnEnable()
     {
         editor_Precision = serializedObject.FindProperty("editor_Precision");
         editor_inEditorShowGizmos = serializedObject.FindProperty("editor_inEditorShowGizmos");
-        //editor_gizmoPointRadius = serializedObject.FindProperty("editor_gizmoPointRadius");
     }
 
     public override void OnInspectorGUI()
@@ -22,11 +18,6 @@ public class XLinePathEditor : Editor
         serializedObject.Update();
         EditorGUILayout.PropertyField(editor_Precision, new GUIContent("Line smoothes"));
         EditorGUILayout.PropertyField(editor_inEditorShowGizmos, new GUIContent("Show Gizmos"));
-        //EditorGUILayout.PropertyField(editor_gizmoPointRadius, new GUIContent("Gizmo size"));
-        //editor_gizmoPointRadius.floatValue = EditorGUILayout.Slider("Gizmo size", editor_gizmoPointRadius.floatValue, 0f, 1f);
-        //_target.editor_Precision = EditorGUILayout.IntField("Line smoothes", _target.editor_Precision);
-        //_target.editor_inEditorShowGizmos = EditorGUILayout.Toggle("Show Gizmos", _target.editor_inEditorShowGizmos);
-        //_target.editor_gizmoPointRadius = EditorGUILayout.Slider("Gizmo size", _target.editor_gizmoPointRadius, 0f, 1f);
 
         if (GUILayout.Button("Create Subline"))
         {

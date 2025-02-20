@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEditor;
+using UnityEditor.PackageManager.UI;
 
 [CustomEditor(typeof(XLinePathPoint))]
 public class XLinePathPointEditor : Editor
@@ -18,7 +19,7 @@ public class XLinePathPointEditor : Editor
             point.isSmooth = EditorGUILayout.Toggle(point.isSmooth);
             if (!lastSmooth && point.isSmooth)
             {
-                point.ForwardPoint = point.ForwardPoint;
+                point.WorldForwardPoint = point.WorldForwardPoint;
             }
         }
         GUILayout.EndHorizontal();
@@ -28,13 +29,13 @@ public class XLinePathPointEditor : Editor
         GUILayout.Box(new GUIContent(EditorGUIUtility.whiteTexture));
         GUI.color = col;
         //Vector3 val = EditorGUILayout.Vector3Field("Point 1", point.ForwardPoint);
-        float len = EditorGUILayout.FloatField("Point 1 length", point.ForwardDir.magnitude);
+        float len = EditorGUILayout.FloatField("Point 1 length", point.WorldForwardDir.magnitude);
         EditorGUILayout.EndHorizontal();
-        if (is2d) EditorGUILayout.LabelField("Local:", point.ForwardPoint2D.ToString());
+        if (is2d) EditorGUILayout.LabelField("Local:", point.WorldForwardPoint2D.ToString());
         if (GUI.changed)
         {
             //point.ForwardPoint = val;
-            point.ForwardPoint = point.Pos + point.transform.forward.normalized * len;
+            point.WorldForwardPoint = point.Pos + point.ThisTransform.forward.normalized * len;
             GUI.changed = false;
             EditorUtility.SetDirty(target);
         }
@@ -42,14 +43,13 @@ public class XLinePathPointEditor : Editor
         GUI.color = Color.red;
         GUILayout.Box(new GUIContent(EditorGUIUtility.whiteTexture));
         GUI.color = col;
-        //val = EditorGUILayout.Vector3Field("Point 2", point.BackwardPoint);
-        len = EditorGUILayout.FloatField("Point 2 length", point.BackwardDir.magnitude);
+        len = EditorGUILayout.FloatField("Point 2 length", point.WorldBackwardDir.magnitude);
         EditorGUILayout.EndHorizontal();
-        if (is2d) EditorGUILayout.LabelField("Local:", point.BackwardPoint2D.ToString());
+        if (is2d) EditorGUILayout.LabelField("Local:", point.WorldBackwardPoint2D.ToString());
         if (GUI.changed)
         {
-            //point.BackwardPoint = val;
-            point.BackwardPoint = point.Pos - point.transform.forward.normalized * len;
+            // correct direction along transform forward axis
+            point.WorldBackwardPoint = point.Pos - point.ThisTransform.forward.normalized * len;
             GUI.changed = false;
             EditorUtility.SetDirty(target);
         }
@@ -58,8 +58,7 @@ public class XLinePathPointEditor : Editor
         {
             if (GUILayout.Button("Set corner"))
             {
-                point.isSmooth = false;
-                point.backwardPoint = point.forwardPoint = Vector3.zero;
+                point.SetCorner();
                 EditorUtility.SetDirty(target);
             }
         }
@@ -72,8 +71,8 @@ public class XLinePathPointEditor : Editor
         if (GUILayout.Button("Add Point"))
         {
             var pt = Instantiate(point);
-            pt.transform.SetParent(point.transform.parent);
-            pt.transform.SetSiblingIndex(point.transform.GetSiblingIndex() + 1);
+            pt.ThisTransform.SetParent(point.ThisTransform.parent);
+            pt.ThisTransform.SetSiblingIndex(point.ThisTransform.GetSiblingIndex() + 1);
         }
 
         if (GUI.changed)
@@ -82,6 +81,7 @@ public class XLinePathPointEditor : Editor
         }
     }
     Vector3 oldPos = Vector3.zero;
+    Quaternion oldRot = Quaternion.identity;
     public void OnSceneGUI()
     {
         XLinePathPoint point = (target as XLinePathPoint);
@@ -89,31 +89,50 @@ public class XLinePathPointEditor : Editor
         Color col = Handles.color;
         //if (Event.current.type == EventType.MouseDown)
         {
-            if (point.ForwardPoint != point.Pos)
+            if (point.WorldForwardPoint != point.Pos)
             {
                 Handles.color = Color.blue;
-                //point.ForwardPoint = 
-                Handles.FreeMoveHandle(point.ForwardPoint, HandleUtility.GetHandleSize(point.ForwardPoint) * .1f, Vector3.one, Handles.SphereHandleCap);
+                EditorGUI.BeginChangeCheck();
+                var newPos = Handles.FreeMoveHandle(point.WorldForwardPoint, HandleUtility.GetHandleSize(point.WorldForwardPoint) * .1f, Vector3.one, Handles.SphereHandleCap);
+                if (EditorGUI.EndChangeCheck())
+                {
+                    Undo.RecordObject(point, "Change WorldForwardPoint");
+                    var dir = newPos - point.Pos;
+                    if(point.isSmooth)
+                        point.ThisTransform.forward = dir.normalized;
+                    point.WorldForwardPoint = point.Pos + point.ThisTransform.forward * dir.magnitude;
+                }
                 Handles.color = col;
             }
-            if (point.BackwardPoint != point.Pos)
+            if (point.WorldBackwardPoint != point.Pos)
             {
                 Handles.color = Color.red;
-                //point.BackwardPoint = 
-                Handles.FreeMoveHandle(point.BackwardPoint, HandleUtility.GetHandleSize(point.BackwardPoint) * .1f, Vector3.one, Handles.SphereHandleCap);
+                EditorGUI.BeginChangeCheck();
+                var newPos = Handles.FreeMoveHandle(point.WorldBackwardPoint, HandleUtility.GetHandleSize(point.WorldBackwardPoint) * .1f, Vector3.one, Handles.SphereHandleCap);
+                if (EditorGUI.EndChangeCheck())
+                {
+                    Undo.RecordObject(point, "Change WorldBackwardPoint");
+                    var dir = newPos - point.Pos;
+                    if (point.isSmooth)
+                        point.ThisTransform.forward = -dir.normalized;
+                    point.WorldBackwardPoint = point.Pos + point.ThisTransform.forward * -dir.magnitude;
+                }
                 Handles.color = col;
             } 
         }
 
 
         Handles.color = Color.green;
-        Handles.DrawLine(point.ForwardPoint, point.Pos);
-        Handles.DrawLine(point.Pos, point.BackwardPoint);
-        if (oldPos != point.ThisTransform.position)
+        Handles.DrawLine(point.WorldForwardPoint, point.Pos);
+        Handles.DrawLine(point.Pos, point.WorldBackwardPoint);
+        if (Event.current.type == EventType.MouseUp)
         {
-            //point.ParentCurve.CorrectPivot();
-            point.ParentCurve.Recalculate();
-            oldPos = point.ThisTransform.position;
+            if (oldPos != point.ThisTransform.position || oldRot != point.ThisTransform.rotation)
+            {
+                point.IsDirty = true;
+                oldPos = point.ThisTransform.position;
+                oldRot = point.ThisTransform.rotation;
+            } 
         }
         if (GUI.changed)
         {

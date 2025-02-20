@@ -1,8 +1,7 @@
-using UnityEngine;
-using UnityEditor;
-using UnityEngine.UI;
 using System.Collections.Generic;
-using static UnityEngine.GraphicsBuffer;
+using UnityEditor;
+using UnityEngine;
+using static Codice.CM.Common.Purge.PurgeReport;
 
 [CustomEditor(typeof(XLinePathSubLine))]
 public class XLinePathSubLineEditor : Editor
@@ -19,9 +18,26 @@ public class XLinePathSubLineEditor : Editor
     private static float tri_radius = 1;
     private List<XLinePathSubLine.XSegment.XPoint> points = new List<XLinePathSubLine.XSegment.XPoint>();
 
+    private SerializedProperty PointNamePrefix;
+    private SerializedProperty _isClosed;
+    private SerializedProperty _precision;
+    private SerializedProperty _curveColor;
+    private SerializedProperty _force2D;
+    private SerializedProperty _avtoCorrectPivot;
+    private SerializedProperty _avtoCorrectLineOnRoad;
+    private SerializedProperty _avtoCorrectLineOnRoadSegmentCount;
+
     void OnEnable()
     {
         _target = target as XLinePathSubLine;
+        PointNamePrefix = serializedObject.FindProperty("PointNamePrefix");
+        _isClosed = serializedObject.FindProperty("_isClosed");
+        _force2D = serializedObject.FindProperty("_force2D");
+        _precision = serializedObject.FindProperty("_precision");
+        _curveColor = serializedObject.FindProperty("_curveColor");
+        _avtoCorrectPivot = serializedObject.FindProperty("_avtoCorrectPivot");
+        _avtoCorrectLineOnRoad = serializedObject.FindProperty("_avtoCorrectLineOnRoad");
+        _avtoCorrectLineOnRoadSegmentCount = serializedObject.FindProperty("_avtoCorrectLineOnRoadSegmentCount");
     }
 
     private void OnDisable()
@@ -47,31 +63,74 @@ public class XLinePathSubLineEditor : Editor
     {
         Selection.activeGameObject = _target.gameObject;
     }
-   //float div = 3;
+    void Slider(SerializedProperty property, float leftValue, float rightValue, GUIContent label)
+    {
+        var position = EditorGUILayout.GetControlRect();
+        label = EditorGUI.BeginProperty(position, label, property);
+
+        EditorGUI.BeginChangeCheck();
+        var newValue = EditorGUI.Slider(position, label, property.floatValue, leftValue, rightValue);
+        // Only assign the value back if it was actually changed by the user.
+        // Otherwise a single value will be assigned to all objects when multi-object editing,
+        // even when the user didn't touch the control.
+        if (EditorGUI.EndChangeCheck())
+        {
+            property.floatValue = newValue;
+        }
+        EditorGUI.EndProperty();
+    }
+    void Slider(SerializedProperty property, int leftValue, int rightValue, GUIContent label)
+    {
+        var position = EditorGUILayout.GetControlRect();
+        label = EditorGUI.BeginProperty(position, label, property);
+
+        EditorGUI.BeginChangeCheck();
+        var newValue = EditorGUI.Slider(position, label, property.intValue, leftValue, rightValue);
+        // Only assign the value back if it was actually changed by the user.
+        // Otherwise a single value will be assigned to all objects when multi-object editing,
+        // even when the user didn't touch the control.
+        if (EditorGUI.EndChangeCheck())
+        {
+            property.intValue = (int)newValue;
+        }
+        EditorGUI.EndProperty();
+    }
     public override void OnInspectorGUI()
     {
+        serializedObject.Update();
         EditorGUILayout.BeginVertical("box");
-        _target.PointNamePrefix = EditorGUILayout.TextField("PointNamePrefix", _target.PointNamePrefix);
-        _target.IsClosed = EditorGUILayout.Toggle("Is Closed:", _target.IsClosed);
-        _target.Force2D = EditorGUILayout.Toggle("Force 2D:", _target.Force2D);
-        _target.Precision = (int)EditorGUILayout.Slider(_target.Precision, 1, 1000);
+        //_target.PointNamePrefix = EditorGUILayout.TextField("PointNamePrefix", _target.PointNamePrefix);
+        //_target.IsClosed = EditorGUILayout.Toggle("Is Closed:", _target.IsClosed);
+        //_target.Force2D = EditorGUILayout.Toggle("Force 2D:", _target.Force2D);
+        //_target.Precision = (int)EditorGUILayout.Slider(_target.Precision, 1, 1000);
+        EditorGUILayout.PropertyField(PointNamePrefix);
+        EditorGUILayout.PropertyField(_isClosed, new GUIContent("Is Closed:"));
+        EditorGUILayout.PropertyField(_force2D, new GUIContent("Force 2D:"));
+        //EditorGUILayout.PropertyField(_precision);
+        Slider(_precision, 1, 1000, new GUIContent("Precision:"));
+
         EditorGUILayout.BeginHorizontal();
         {
             Undo.RecordObject(_target, "Zero Transform Position");
-            EditorGUILayout.PrefixLabel("Color:");
-            _target.curveColor = EditorGUILayout.ColorField(_target.curveColor);
+            //EditorGUILayout.PrefixLabel("Color:");
+            //_target.curveColor = EditorGUILayout.ColorField(_target.curveColor);
+            EditorGUILayout.PropertyField(_curveColor, new GUIContent("Color:"));
         }
         EditorGUILayout.EndHorizontal();
-        _target.AvtoCorrectPivot = EditorGUILayout.Toggle("Avto correct pivot", _target.AvtoCorrectPivot);
-        _target.AvtoCorrectLineOnRoad = EditorGUILayout.BeginToggleGroup("Smooth on road", _target.AvtoCorrectLineOnRoad);
-        
-        if (_target.AvtoCorrectLineOnRoad)
+        //_target.AvtoCorrectPivot = EditorGUILayout.Toggle("Avto correct pivot", _target.AvtoCorrectPivot);
+        //_target.AvtoCorrectLineOnRoad = EditorGUILayout.BeginToggleGroup("Smooth on road", _target.AvtoCorrectLineOnRoad);
+        EditorGUILayout.PropertyField(_avtoCorrectPivot, new GUIContent("Avto correct pivot"));
+        EditorGUILayout.PropertyField(_avtoCorrectLineOnRoad, new GUIContent("Smooth on road"));
+
+        if (_avtoCorrectLineOnRoad.boolValue)//(_target.AvtoCorrectLineOnRoad)
         {
-            _target.AvtoCorrectLineOnRoadSegmentCount = EditorGUILayout.IntField("SegmentCount", _target.AvtoCorrectLineOnRoadSegmentCount);
-            if(GUILayout.Button("Divide"))
-                SmoothRoad(_target.AvtoCorrectLineOnRoadSegmentCount);
+            //_target.AvtoCorrectLineOnRoadSegmentCount = EditorGUILayout.IntField("SegmentCount", _target.AvtoCorrectLineOnRoadSegmentCount);
+            EditorGUILayout.PropertyField(_avtoCorrectLineOnRoadSegmentCount, new GUIContent("SegmentCount"));
+            if (GUILayout.Button("Divide"))
+                SmoothRoad(_avtoCorrectLineOnRoadSegmentCount.intValue);
         }
-        EditorGUILayout.EndToggleGroup();
+        //EditorGUILayout.EndToggleGroup();
+
         if (GUILayout.Button("Snap to road"))
         {
             XLinePathPoint[] _points = _target.GetComponentsInChildren<XLinePathPoint>();
@@ -84,6 +143,7 @@ public class XLinePathSubLineEditor : Editor
                                 $"Segments count: {_target.Segments.Length}\n\r" +
                                 $"Total precission: {_target.Segments.Length * _target.Precision}", MessageType.Info);
 
+        serializedObject.ApplyModifiedProperties();
         if (inEditorClickModeOn)
             GUI.color = Color.yellow;
         EditorGUILayout.BeginHorizontal();
@@ -297,8 +357,8 @@ public class XLinePathSubLineEditor : Editor
                         Vector3 v = p2 - p1;
                         Vector3 v1 = point.Pos - p1;
                         Vector3 v2 = point.Pos - p2;
-                        point.forwardPoint = point.transform.worldToLocalMatrix.MultiplyPoint(point.Pos + v.normalized * v2.magnitude);
-                        point.backwardPoint = point.transform.worldToLocalMatrix.MultiplyPoint(point.Pos - v.normalized * v1.magnitude);
+                        point.WorldForwardPoint = point.Pos + v.normalized * v2.magnitude;
+                        point.WorldBackwardPoint = point.Pos - v.normalized * v1.magnitude;
                         point.isSmooth = true;
                         EditorUtility.SetDirty(target);
                         SceneView.RepaintAll();
@@ -351,17 +411,15 @@ public class XLinePathSubLineEditor : Editor
                             pointAfter = _points[i + 1];
                         }
                         point.isSmooth = false;
-                        point.BackwardPoint = Vector3.Lerp(point.Pos, pointBefore.Pos, 1f / 3f);
-                        point.ForwardPoint = Vector3.Lerp(point.Pos, pointAfter.Pos, 1f / 3f);
+                        point.WorldBackwardPoint = Vector3.Lerp(point.Pos, pointBefore.Pos, 1f / 3f);
+                        point.WorldForwardPoint = Vector3.Lerp(point.Pos, pointAfter.Pos, 1f / 3f);
                         EditorUtility.SetDirty(target);
 
                         SceneView.RepaintAll();
                     }
                     if (GUILayout.Button("Corner"))
                     {
-                        point.isSmooth = false;
-                        point.isSmooth = false;
-                        point.backwardPoint = point.forwardPoint = Vector3.zero;
+                        point.SetCorner();
                         EditorUtility.SetDirty(target);
 
                         SceneView.RepaintAll();
@@ -402,14 +460,8 @@ public class XLinePathSubLineEditor : Editor
                 int i2 = _points.Length - i - 1;
                 _points[i].transform.SetSiblingIndex(i2);
                 _points[i2].transform.SetSiblingIndex(i);
-                var fwdpt = _points[i].forwardPoint;
-                var bcdpt = _points[i].backwardPoint;
-                _points[i].forwardPoint = bcdpt;
-                _points[i].backwardPoint = fwdpt;
-                fwdpt = _points[i2].forwardPoint;
-                bcdpt = _points[i2].backwardPoint;
-                _points[i2].forwardPoint = bcdpt;
-                _points[i2].backwardPoint = fwdpt;
+                _points[i].ReverseDirections();
+                _points[i2].ReverseDirections();
             }
         }
 
@@ -428,7 +480,7 @@ public class XLinePathSubLineEditor : Editor
         if (points.Count == 0)
         {
             XLinePathPoint[] pts = _target.GetComponentsInChildren<XLinePathPoint>(true);
-            points.AddRange(System.Array.ConvertAll<XLinePathPoint, XLinePathSubLine.XSegment.XPoint>(pts, (val) => new XLinePathSubLine.XSegment.XPoint(val.Pos, val.ForwardPoint, val.BackwardPoint, val.isSmooth)));
+            points.AddRange(System.Array.ConvertAll<XLinePathPoint, XLinePathSubLine.XSegment.XPoint>(pts, (val) => new XLinePathSubLine.XSegment.XPoint(val.Pos, val.WorldForwardPoint, val.WorldBackwardPoint, val.isSmooth)));
         }
 
         List<XLinePathPoint> ps = new List<XLinePathPoint>();

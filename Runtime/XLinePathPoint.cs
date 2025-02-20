@@ -6,19 +6,22 @@ public class XLinePathPoint : MonoBehaviour
 {
     public bool isSmooth = true;
 
-    public Vector3 forwardPoint;
-    public Vector3 backwardPoint;
+    [SerializeField] Vector3 localForwardPoint;
+    [SerializeField] Vector3 localBackwardPoint;
+    [SerializeField] Vector3 worldForwardPoint;
+    [SerializeField] Vector3 worldBackwardPoint;
 
     private Transform _thisTransform;
     private RectTransform _thisRectTransform;
+    private XLinePathSubLine _parentCurve;
 
     public void Awake()
     {
         _thisTransform = transform;
-#if UNITY_EDITOR
-        oldPos = _thisTransform.position;
-        oldRot = _thisTransform.localRotation; 
-#endif
+//#if UNITY_EDITOR
+//        oldPos = _thisTransform.position;
+//        oldRot = _thisTransform.localRotation; 
+//#endif
     }
 
     private bool _isDirty = true;
@@ -28,106 +31,113 @@ public class XLinePathPoint : MonoBehaviour
         get { return _isDirty; }
         set
         {
-            if(ParentCurve != null && _isDirty != value && value) ParentCurve.SetDirty();
             _isDirty = value;
+            if (ParentCurve != null && _isDirty)
+            {
+                worldForwardPoint = ThisTransform.localToWorldMatrix.MultiplyPoint(localForwardPoint);
+                worldBackwardPoint = ThisTransform.localToWorldMatrix.MultiplyPoint(localBackwardPoint);
+                ParentCurve.SetDirty();
+            }
         }
     }
 
     public Vector3 LocalForwardPoint
     {
-        get { return forwardPoint; }
-        set
-        {
-            Vector3 old = forwardPoint;
-            forwardPoint = value;
+        get { return localForwardPoint; }
+        //set
+        //{
+        //    if (localForwardPoint != value)
+        //    {
+        //        IsDirty = true;
+        //        localForwardPoint = value;
+        //        //worldForwardPoint = ThisTransform.localToWorldMatrix.MultiplyPoint(localForwardPoint);
 
-            if (forwardPoint != old)
-            {
-
-                IsDirty = true;
-            }
-
-            if (isSmooth)
-            {
-                float len = backwardPoint.magnitude;
-                backwardPoint = -forwardPoint.normalized * len;
-            }
-        }
+        //        if (isSmooth)
+        //        {
+        //            float len = localBackwardPoint.magnitude;
+        //            localBackwardPoint = -localForwardPoint.normalized * len;
+        //           // worldBackwardPoint = ThisTransform.localToWorldMatrix.MultiplyPoint(localBackwardPoint);
+        //        }
+        //    }
+        //}
     }
     public Vector3 LocalBackwardPoint
     {
-        get { return backwardPoint; }
+        get { return localBackwardPoint; }
+        //set
+        //{
+        //    if (localBackwardPoint != value)
+        //    {
+        //        IsDirty = true;
+        //        localBackwardPoint = value;
+        //        //worldBackwardPoint = ThisTransform.localToWorldMatrix.MultiplyPoint(localBackwardPoint);
+
+        //        if (isSmooth)
+        //        {
+        //            float len = localForwardPoint.magnitude;
+        //            localForwardPoint = -localBackwardPoint.normalized * len;
+        //            //worldForwardPoint = ThisTransform.localToWorldMatrix.MultiplyPoint(localForwardPoint);
+        //        }
+        //    }
+        //}
+    }
+    public Vector3 WorldForwardPoint
+    {
+        get { return worldForwardPoint; }
         set
         {
-            Vector3 old = backwardPoint;
-            backwardPoint = value;
-            if (backwardPoint != old)
+            if (worldForwardPoint != value)
             {
                 IsDirty = true;
-            }
-            if (isSmooth)
-            {
-                float len = forwardPoint.magnitude;
-                forwardPoint = -backwardPoint.normalized * len;
+                worldForwardPoint = value;
+                localForwardPoint = ThisTransform.worldToLocalMatrix.MultiplyPoint(value);
+
+                if (isSmooth)
+                {
+                    float len = localBackwardPoint.magnitude;
+                    localBackwardPoint = -localForwardPoint.normalized * len;
+                    worldBackwardPoint = ThisTransform.localToWorldMatrix.MultiplyPoint(localBackwardPoint);
+                }
             }
         }
     }
-    public Vector3 ForwardPoint
+    public Vector3 WorldBackwardPoint
     {
-        get { return this.ThisTransform.localToWorldMatrix.MultiplyPoint(forwardPoint); }
+        get { return worldBackwardPoint; }
         set
         {
-            Vector3 old = forwardPoint;
-            forwardPoint = ThisTransform.worldToLocalMatrix.MultiplyPoint(value);
-
-            if (forwardPoint != old)
-            {
-
-                IsDirty = true;
-            }
-
-            if (isSmooth)
-            {
-                float len = backwardPoint.magnitude;
-                backwardPoint = -forwardPoint.normalized * len;
-            }
-        }
-    }
-    public Vector3 BackwardPoint
-    {
-        get { return ThisTransform.localToWorldMatrix.MultiplyPoint(backwardPoint); }
-        set
-        {
-            Vector3 old = backwardPoint;
-            backwardPoint = this.ThisTransform.worldToLocalMatrix.MultiplyPoint(value);
-            if (backwardPoint != old)
+            if (worldBackwardPoint != value)
             {
                 IsDirty = true;
-            }
-            if (isSmooth)
-            {
-                float len = forwardPoint.magnitude;
-                forwardPoint = -backwardPoint.normalized * len;
+                worldBackwardPoint = value;
+                localBackwardPoint = this.ThisTransform.worldToLocalMatrix.MultiplyPoint(value);
+
+                if (isSmooth)
+                {
+                    float len = localForwardPoint.magnitude;
+                    localForwardPoint = -localBackwardPoint.normalized * len;
+                    worldForwardPoint = ThisTransform.localToWorldMatrix.MultiplyPoint(localForwardPoint);
+                }
             }
         }
     }
 
-    public Vector3 ForwardDir
+    public Vector3 WorldForwardDir
     {
-        get { return ForwardPoint - Pos; }
+        get { return WorldForwardPoint - Pos; }
     }
-    public Vector3 BackwardDir
+    public Vector3 WorldBackwardDir
     {
-        get { return BackwardPoint - Pos; }
+        get { return WorldBackwardPoint - Pos; }
     }
 
     public Vector3 ForwardDir2D
     {
-        get { return (ForwardPoint2D - Pos2D).normalized; }
+        get { return (WorldForwardPoint2D - Pos2D).normalized; }
     }
     public Vector3 BackwardDir2D
     {
-        get { return (BackwardPoint2D - Pos2D).normalized; }
+        get { return (WorldBackwardPoint2D - Pos2D).normalized; }
     }
 
     public Vector3 LocalPos
@@ -180,13 +190,13 @@ public class XLinePathPoint : MonoBehaviour
             return ThisRectTransform.anchoredPosition;
         }
     }
-    public Vector2 ForwardPoint2D
+    public Vector2 WorldForwardPoint2D
     {
         get
         {
             if (ThisRectTransform == null)
                 _thisRectTransform = gameObject.AddComponent<RectTransform>();
-            Vector2 p = RectTransformUtility.WorldToScreenPoint(null, ForwardPoint);
+            Vector2 p = RectTransformUtility.WorldToScreenPoint(null, WorldForwardPoint);
             Vector2 lp;
             RectTransform rtr = ThisRectTransform.parent.GetComponent<RectTransform>();
             if (rtr == null)
@@ -195,13 +205,13 @@ public class XLinePathPoint : MonoBehaviour
             return lp;
         }
     }
-    public Vector2 BackwardPoint2D
+    public Vector2 WorldBackwardPoint2D
     {
         get
         {
             if (ThisRectTransform == null)
                 _thisRectTransform = gameObject.AddComponent<RectTransform>();
-            Vector2 p = RectTransformUtility.WorldToScreenPoint(null, BackwardPoint);
+            Vector2 p = RectTransformUtility.WorldToScreenPoint(null, WorldBackwardPoint);
             Vector2 lp;
             RectTransform rtr = ThisRectTransform.parent.GetComponent<RectTransform>();
             if (rtr == null)
@@ -220,7 +230,6 @@ public class XLinePathPoint : MonoBehaviour
             return _parentCurve;
         }
     }
-    private XLinePathSubLine _parentCurve;
 
     public Vector3 GetPos(bool _2D)
     {
@@ -228,11 +237,11 @@ public class XLinePathPoint : MonoBehaviour
     }
     public Vector3 GetForwardPoint(bool _2D)
     {
-        return _2D ? (Vector3)ForwardPoint2D : ForwardPoint;
+        return _2D ? (Vector3)WorldForwardPoint2D : WorldForwardPoint;
     }
     public Vector3 GetBackwardPoint(bool _2D)
     {
-        return _2D ? (Vector3)BackwardPoint2D : BackwardPoint;
+        return _2D ? (Vector3)WorldBackwardPoint2D : WorldBackwardPoint;
     }
 
     void OnDisable()
@@ -259,10 +268,37 @@ public class XLinePathPoint : MonoBehaviour
         ParentCurve.SetDirty();
     }
 
+    public void SetBreak()
+    {
+        isSmooth = false;
+    }
+
+    public void SetCorner()
+    {
+        isSmooth = false;
+        worldForwardPoint = Pos;
+        worldBackwardPoint = Pos;
+        localForwardPoint = Vector3.zero;
+        localBackwardPoint = Vector3.zero;
+    }
+
+    public void ReverseDirections()
+    {
+        var fwdpt = worldForwardPoint;
+        var bcdpt = worldBackwardPoint;
+        worldForwardPoint = bcdpt;
+        worldBackwardPoint = fwdpt;
+
+        localForwardPoint = ThisTransform.worldToLocalMatrix.MultiplyPoint(worldForwardPoint);
+        localBackwardPoint = ThisTransform.worldToLocalMatrix.MultiplyPoint(worldBackwardPoint);
+
+        IsDirty = true;
+    }
+
 #if UNITY_EDITOR
 
-    Vector3 oldPos;
-    Quaternion oldRot;
+    //Vector3 oldPos;
+    //Quaternion oldRot;
     void OnDrawGizmos()
     {
         if (transform.parent == null) return;
@@ -275,16 +311,16 @@ public class XLinePathPoint : MonoBehaviour
         else Gizmos.DrawSphere(Pos, 2f);
 
         Gizmos.color = Color.gray;
-        Gizmos.DrawLine(ForwardPoint, Pos);
-        Gizmos.DrawLine(Pos, BackwardPoint);
+        Gizmos.DrawLine(WorldForwardPoint, Pos);
+        Gizmos.DrawLine(Pos, WorldBackwardPoint);
 
-        if (oldPos != transform.position || oldRot != transform.localRotation || IsDirty)
-        {
+        //if (oldPos != transform.position || oldRot != transform.localRotation || IsDirty)
+        //{
             //ParentCurve.SetDirty();
-            IsDirty = false;
-        }
-        oldPos = transform.position;
-        oldRot = transform.localRotation;
+            //IsDirty = false;
+        //}
+        //oldPos = transform.position;
+        //oldRot = transform.localRotation;
     } 
 #endif
 }

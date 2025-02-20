@@ -82,7 +82,7 @@ public class FenceLoft : SplineLoft
     private MeshFilter spanFilter;
     private bool isTemplate = false;
     private XLinePath temp_CurveForm;
-    private bool hasCreateTemp = false;
+    //private bool hasCreateTemp = false;
     public enum FencePreset
     {
         Preset1,
@@ -96,7 +96,7 @@ public class FenceLoft : SplineLoft
         base.Start();
     }
 
-    public override void InitLoft(bool force = false)
+    public override void Init(bool force = false)
     {
         if (Span != null)
         {
@@ -129,10 +129,10 @@ public class FenceLoft : SplineLoft
                     CreateTempFormPresent2();
                     break;
             }
-            hasCreateTemp = true;
+            //hasCreateTemp = true;
         }
 
-        base.InitLoft();
+        base.Init();
 
         //if (IsTemplate)
         //{
@@ -272,7 +272,7 @@ public class FenceLoft : SplineLoft
                     CreateTempFormPresent2();
                     break;
             }
-            hasCreateTemp = true;
+            //hasCreateTemp = true;
         }
         if (CurveForm == null)
             return;
@@ -281,7 +281,7 @@ public class FenceLoft : SplineLoft
         if (filter.sharedMesh != null)
             GenerateColumn();
 
-        hasCreateTemp = false;
+        //hasCreateTemp = false;
         //if (IsTemplate)
         //{
         //    GameObject formGO = GameObject.Find("Temp_Form");
@@ -740,7 +740,7 @@ public class FenceLoft : SplineLoft
         return new Vector3(a.x * b.x, a.y * b.y, a.z * b.z);
     }
 
-    public void Clear()
+    public new void Clear()
     {
 		if(DestroyOnStart || Application.isEditor)
 		{

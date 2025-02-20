@@ -5,21 +5,36 @@ using System.Collections.Generic;
 [AddComponentMenu("Chuvi/Line/XLinePathSubLine")]
 public class XLinePathSubLine : MonoBehaviour
 {
-
     public delegate void XLinePathSubLineChange(XLinePathSubLine subline);
     public event XLinePathSubLineChange OnLineChanged;
-//#if UNITY_EDITOR
-//    public virtual bool InEditorShowGizmos
-//    {
-//        get
-//        {
-//            if (Parent == null) return false;
-//            return Parent.editor_inEditorShowGizmos;
-//        }
-//    }
-//#endif
-    [SerializeField]
-    protected bool _isClosed = false;
+
+    [SerializeField] protected string PointNamePrefix = "Point_";
+    [SerializeField] protected bool _isClosed = false;
+    [SerializeField] private int _precision = 50;
+    [SerializeField] Color _curveColor = Color.white;
+    [SerializeField] bool _force2D = false;
+    [SerializeField] bool _avtoCorrectPivot;
+    [SerializeField] bool _avtoCorrectLineOnRoad;
+    [SerializeField] int _avtoCorrectLineOnRoadSegmentCount = 10;
+
+    protected float _length = 1.0f;
+    protected XLinePath parent;
+    protected XLinePathSegment[] _segments;
+    protected XLinePathPoint[] points;
+    protected bool recalcSegments = true;
+
+    public int Precision
+    {
+        get => _precision;
+        set
+        {
+            if (_precision != value)
+            {
+                _precision = value;
+                SetDirty();
+            }
+        }
+    }
     public bool IsClosed
     {
         get { return _isClosed; }
@@ -29,48 +44,73 @@ public class XLinePathSubLine : MonoBehaviour
             _isClosed = value;
         }
     }
-    protected float _length = 1.0f;
-    [SerializeField] private int precision = 50;
-    public int Precision
+    public bool AvtoCorrectPivot
     {
-        get => precision;
+        get => _avtoCorrectPivot;
         set
         {
-            if (precision != value)
+            if (_avtoCorrectPivot != value)
             {
-                precision = value;
-                recalcSegments = true;
+                _avtoCorrectPivot = value;
+                SetDirty();
             }
         }
     }
+    public bool AvtoCorrectLineOnRoad
+    {
+        get => _avtoCorrectLineOnRoad;
+        set
+        {
+            if (_avtoCorrectPivot != value)
+            {
+                _avtoCorrectPivot = value;
+                SetDirty();
+            }
+        }
+    }// = false;
+    public int AvtoCorrectLineOnRoadSegmentCount
+    {
+        get => _avtoCorrectLineOnRoadSegmentCount;
+        set
+        {
+            if (_avtoCorrectLineOnRoadSegmentCount != value)
+            {
+                _avtoCorrectLineOnRoadSegmentCount = value;
+                SetDirty();
+            }
+        }
+    }// = 10;
+    public bool Force2D
+    {
+        get => _force2D;
+        set
+        {
+            if (_force2D != value)
+            {
+                _force2D = value;
+                SetDirty();
+            }
+        }
+    }
+    public Color CurveColor 
+    { 
+        get => _curveColor; 
+        set => _curveColor = value; 
+    }
+
     public float Length
     {
         get { return _length; }
     }
-    public Color curveColor = Color.white;
-    public string PointNamePrefix = "Point_";
-    public bool AvtoCorrectPivot = false;
-    public bool AvtoCorrectLineOnRoad = false;
-    public int AvtoCorrectLineOnRoadSegmentCount = 10;
-    public bool Force2D = false;
-
     public XLinePathSegment[] Segments
     {
         get 
         {
             if (points == null || points.Length == 0) return new XLinePathSegment[0];
 
-            if (recalcSegments ||
-//#if UNITY_EDITOR
-//        parentPrecision != parent.editor_Precision || 
-//#endif
-                _segments == null)
+            if (recalcSegments || _segments == null)
             {
-                //CorrectPivot();
                 if (parent == null) parent = GetComponentInParent<XLinePath>();
-//#if UNITY_EDITOR 
-//                parentPrecision = parent.editor_Precision; 
-//#endif
                 _length = 0;
                 _segments = new XLinePathSegment[IsClosed ? points.Length : points.Length - 1];
                 for (int i = 0; i < _segments.Length; i++)
@@ -83,7 +123,7 @@ public class XLinePathSubLine : MonoBehaviour
                     {
                         _segments[i] = new XLinePathSegment(points[i], i + 1 < points.Length ? points[i + 1] : points[0]);
                     }
-                    _segments[i].SegmentPartsCount = precision;//parentPrecision;
+                    _segments[i].SegmentPartsCount = _precision;
                     _segments[i].Recalculate(Force2D);
                     _length += _segments[i].length;
                 }
@@ -92,7 +132,6 @@ public class XLinePathSubLine : MonoBehaviour
             return _segments;
         }
     }
-    protected XLinePath parent;
     public XLinePath Parent
     {
         get
@@ -101,19 +140,6 @@ public class XLinePathSubLine : MonoBehaviour
             return parent;
         }
     }
-    protected XLinePathSegment[] _segments;
-    protected XLinePathPoint[] points;
-    protected bool _recalcSegments = true;
-    protected bool recalcSegments
-    {
-        get => _recalcSegments;
-        set
-        {
-            if (_recalcSegments == value) return;
-            _recalcSegments = value;
-        }
-    }
-
     public bool IsDirty { get { return recalcSegments; } }
 
     void Awake()
@@ -163,14 +189,14 @@ public class XLinePathSubLine : MonoBehaviour
         {
             if (!IsClosed)
             {
-                _segments[i] = new XSegment(pts[i].Pos, pts[i].ForwardPoint, pts[i].BackwardPoint,
-                    pts[i + 1].Pos, pts[i + 1].ForwardPoint, pts[i + 1].BackwardPoint, IsSmooth);
+                _segments[i] = new XSegment(pts[i].Pos, pts[i].WorldForwardPoint, pts[i].WorldBackwardPoint,
+                    pts[i + 1].Pos, pts[i + 1].WorldForwardPoint, pts[i + 1].WorldBackwardPoint, IsSmooth);
             }
             else
             {
                 XLinePathPoint p2 = i + 1 < pts.Length ? pts[i + 1] : pts[0];
-                _segments[i] = new XSegment(pts[i].Pos, pts[i].ForwardPoint, pts[i].BackwardPoint,
-                 p2.Pos, p2.ForwardPoint, p2.BackwardPoint, IsSmooth);
+                _segments[i] = new XSegment(pts[i].Pos, pts[i].WorldForwardPoint, pts[i].WorldBackwardPoint,
+                 p2.Pos, p2.WorldForwardPoint, p2.WorldBackwardPoint, IsSmooth);
             }
             _segments[i].SegmentPartsCount = 10;
             _segments[i].Recalculate();
@@ -202,7 +228,7 @@ public class XLinePathSubLine : MonoBehaviour
                 if (!string.IsNullOrEmpty(PointNamePrefix)) points[i].name = PointNamePrefix + i;
                 _segments[i] = new XLinePathSegment(points[i], i + 1 < points.Length ? points[i + 1] : points[0]);
             }
-            _segments[i].SegmentPartsCount = precision;//parentPrecision;
+            _segments[i].SegmentPartsCount = _precision;//parentPrecision;
             _segments[i].Recalculate(Force2D);
             _length += _segments[i].length;
         }
@@ -235,10 +261,10 @@ public class XLinePathSubLine : MonoBehaviour
         points = _pts.ToArray();
         recalcSegments = true;
     }
-    internal void AddPoints(XLinePathPoint[] points)
+    internal void AddPoints(XLinePathPoint[] _points)
     {
         List<XLinePathPoint> _pts = new List<XLinePathPoint>(points);
-        _pts.AddRange(points);
+        _pts.AddRange(_points);
         points = _pts.ToArray();
         recalcSegments = true;
     }
@@ -472,21 +498,18 @@ public class XLinePathSubLine : MonoBehaviour
 
             Vector3 p1 = Vector3.Lerp(point.Pos, pointBefore.Pos, 1f / 3f);
             Vector3 p2 = Vector3.Lerp(point.Pos, pointAfter.Pos, 1f / 3f);
-
             if (point.isSmooth)
             {
                 Vector3 v = p2 - p1;
                 Vector3 v1 = point.Pos - p1;
                 Vector3 v2 = point.Pos - p2;
-                point.forwardPoint =
-                    point.transform.worldToLocalMatrix.MultiplyPoint(point.Pos + v.normalized * v2.magnitude);
-                point.backwardPoint =
-                    point.transform.worldToLocalMatrix.MultiplyPoint(point.Pos - v.normalized * v1.magnitude);
+                point.WorldForwardPoint = point.Pos + v.normalized * v2.magnitude;
+                point.WorldBackwardPoint = point.Pos - v.normalized * v1.magnitude;
             }
             else
             {
-                point.BackwardPoint = Vector3.Lerp(point.Pos, pointBefore.Pos, 1f / 3f);
-                point.ForwardPoint = Vector3.Lerp(point.Pos, pointAfter.Pos, 1f / 3f);
+                point.WorldBackwardPoint = Vector3.Lerp(point.Pos, pointBefore.Pos, 1f / 3f);
+                point.WorldForwardPoint = Vector3.Lerp(point.Pos, pointAfter.Pos, 1f / 3f);
             }
         }
     }
@@ -568,7 +591,7 @@ public class XLinePathSubLine : MonoBehaviour
         if (parent == null) parent = GetComponentInParent<XLinePath>();
         if (Segments == null || Segments.Length == 0) return;
         Color col = Gizmos.color;
-        Gizmos.color = curveColor;
+        Gizmos.color = _curveColor;
         for (int i = 0; i < Segments.Length; i++)
         {
             Segments[i].DrawSegmentGizmo(subdivs/*, gizmoPointRadius*/);
@@ -653,11 +676,11 @@ public class XLinePathSubLine : MonoBehaviour
             Vector3 v = p2 - p1;
             Vector3 v1 = point.Pos - p1;
             Vector3 v2 = point.Pos - p2;
-            Vector3 fwd = point.Pos + v.normalized * v2.magnitude;//point.transform.worldToLocalMatrix.MultiplyPoint(point.Pos + v.normalized * v2.magnitude);
+            Vector3 fwd = point.Pos + v.normalized * v2.magnitude;
             Vector3 bwd = point.Pos - v.normalized * v1.magnitude;
             point.transform.forward = (fwd - point.transform.position).normalized;
-            point.forwardPoint = point.transform.worldToLocalMatrix.MultiplyPoint(fwd);//point.transform.worldToLocalMatrix.MultiplyPoint(point.Pos + v.normalized * v2.magnitude);
-            point.backwardPoint = point.transform.worldToLocalMatrix.MultiplyPoint(bwd);//point.transform.worldToLocalMatrix.MultiplyPoint(point.Pos - v.normalized * v1.magnitude);
+            point.WorldForwardPoint = fwd;
+            point.WorldBackwardPoint = bwd;
             point.isSmooth = true;
         }
     }
@@ -715,8 +738,9 @@ public class XLinePathSubLine : MonoBehaviour
                 pointAfter = _points[i + 1];
             }
             point.isSmooth = false;
-            point.BackwardPoint = Vector3.Lerp(point.Pos, pointBefore.Pos, 1f / 3f);
-            point.ForwardPoint = Vector3.Lerp(point.Pos, pointAfter.Pos, 1f / 3f);
+            var worldToLocalMatrix = point.ThisTransform.worldToLocalMatrix;
+            point.WorldBackwardPoint = Vector3.Lerp(point.Pos, pointBefore.Pos, 1f / 3f);
+            point.WorldForwardPoint = Vector3.Lerp(point.Pos, pointAfter.Pos, 1f / 3f);
         }
     }
     public void SetCornerPoints()
@@ -726,8 +750,7 @@ public class XLinePathSubLine : MonoBehaviour
         {
             XLinePathPoint point = _points[i];
             point.isSmooth = false;
-            point.isSmooth = false;
-            point.backwardPoint = point.forwardPoint = Vector3.zero;
+            point.WorldBackwardPoint = point.WorldForwardPoint = point.Pos;
         }
     }
 
