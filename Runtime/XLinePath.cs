@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEngine.UI;
 
 [ExecuteInEditMode]
 [AddComponentMenu("Chuvi/Line/XLinePath")]
@@ -155,6 +156,14 @@ public class XLinePath : MonoBehaviour, IXLinePath
     {
         XLinePathSubLine sl = Sublines[subline];
         return sl.GetInterpolatedPointEx(dist);
+    }
+
+    private void OnTransformChildrenChanged()
+    {
+        for (int i = 0; i < Sublines.Count; i++)
+        {
+            Sublines[i].SetDirty();
+        }
     }
 
     void IXLinePath.OnSubLineChanged(XLinePathSubLine subLine)

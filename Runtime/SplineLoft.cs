@@ -41,6 +41,8 @@ public class SplineLoft : MonoBehaviour
     [SerializeField] Distort[] distortPoints;
     [SerializeField] AnimationCurve distortionGrad = new AnimationCurve();
 
+    public Distort[] DistortPoints => distortPoints;
+
     public virtual void Start()
     {
         filter = GetComponent<MeshFilter>();
@@ -129,11 +131,8 @@ public class SplineLoft : MonoBehaviour
             if (filter == null)
                 filter = gameObject.AddComponent<MeshFilter>();
         }
-        if (CurveForm == null || CurvePath == null)
+        if (CurveForm == null || CurvePath == null || (Application.isPlaying && gameObject.isStatic))
         {
-            if(filter.sharedMesh != null)
-                filter.sharedMesh.Clear();
-            filter.sharedMesh = null;
             if (UseCanvasRenderer)
             {
                 CanvasRenderer _cr = GetComponent<CanvasRenderer>();
@@ -142,7 +141,14 @@ public class SplineLoft : MonoBehaviour
                     _cr.Clear();
                 }
             }
+            //else if(filter != null)
+            //{
+            //    if (filter.sharedMesh != null)
+            //        filter.sharedMesh.Clear();
+            //    filter.sharedMesh = null;
+            //}
             Debug.Log("UpdateMesh skip");
+            sw.Stop();
             return;
         }
 
@@ -158,6 +164,8 @@ public class SplineLoft : MonoBehaviour
             mesh.MarkDynamic();
             mesh.name = "filter.sharedMesh";
         }
+        else 
+            mesh.Clear();
         if (UseCanvasRenderer && Form2D)
             mergeSubForms = false;
 
@@ -802,12 +810,12 @@ public class SplineLoft : MonoBehaviour
         //}
         if (((IXLinePath)CurvePath).IsDirty || ((IXLinePath)CurveForm).IsDirty)
             Init(true);
-        Gizmos.color = Color.magenta;
-        for (int i = 0; i < distortionGrad.keys.Length; i++)
-        {
-            var pos = CurvePath.GetInterpolatedPoint(sublineIndex, distortionGrad.keys[i].time);
-            Gizmos.DrawSphere(pos, distortionGrad.keys[i].value);
-        }
+        //Gizmos.color = Color.yellow;
+        //for (int i = 0; i < distortionGrad.keys.Length; i++)
+        //{
+        //    var pos = CurvePath.GetInterpolatedPoint(sublineIndex, distortionGrad.keys[i].time);
+        //    Gizmos.DrawSphere(pos, distortionGrad.keys[i].value);
+        //}
 
         /*if(filter.sharedMesh == null) return;
 

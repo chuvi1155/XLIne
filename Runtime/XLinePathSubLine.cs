@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using static UnityEditor.PlayerSettings;
 
 [ExecuteInEditMode]
 [AddComponentMenu("Chuvi/Line/XLinePathSubLine")]
@@ -348,6 +349,56 @@ public class XLinePathSubLine : MonoBehaviour
         Segments[Segments.Length - 1].GetInterpolatedValues(1, Force2D, localPoints, out pos, out vel, out acc, out up);
         return dist;
     }
+    public float GetInterpolatedValues(float dist, bool localPoints, out InterpolatedValues result, bool clamped = false)
+    {
+        if (recalcSegments)
+        {
+            Recalculate();
+        }
+        float prevlen = 0f;
+        float len = 0f;
+        //while (dist >= Length)
+        //    dist -= Length;
+
+        //while (dist < 0)
+        //    dist += Length;
+        if (!clamped && (dist > Length || dist < 0))
+            dist = Mathf.Repeat(dist, Length);
+        else if (clamped && dist > Length)
+            dist = Length;
+
+
+        for (int i = 0; i < Segments.Length; i++)
+        {
+            prevlen = len;
+            len += Segments[i].length;
+            if (dist <= len)
+            {
+
+                float t = (dist - prevlen) / Segments[i].length;
+                Segments[i].GetInterpolatedValues(t, Force2D, localPoints, out var _pos, out var _vel, out var _acc, out var _up);
+                result = new InterpolatedValues
+                {
+                    pos = _pos,
+                    vel = _vel,
+                    acc = _acc,
+                    up = _up,
+                    segmentIndex = i
+                };
+                return dist;
+            }
+        }
+        Segments[Segments.Length - 1].GetInterpolatedValues(1, Force2D, localPoints, out var pos, out var vel, out var acc, out var up);
+        result = new InterpolatedValues
+        {
+            pos = pos,
+            vel = vel,
+            acc = acc,
+            up = up,
+            segmentIndex = Segments.Length - 1
+        };
+        return dist;
+    }
 
     public float GetInterpolatedValues(float dist, out Vector3 pos, out Vector3 vel, out Vector3 acc)
     {
@@ -498,18 +549,19 @@ public class XLinePathSubLine : MonoBehaviour
 
             Vector3 p1 = Vector3.Lerp(point.Pos, pointBefore.Pos, 1f / 3f);
             Vector3 p2 = Vector3.Lerp(point.Pos, pointAfter.Pos, 1f / 3f);
+            var matr = point.ThisTransform.worldToLocalMatrix;
             if (point.isSmooth)
             {
                 Vector3 v = p2 - p1;
                 Vector3 v1 = point.Pos - p1;
                 Vector3 v2 = point.Pos - p2;
-                point.WorldForwardPoint = point.Pos + v.normalized * v2.magnitude;
-                point.WorldBackwardPoint = point.Pos - v.normalized * v1.magnitude;
+                point.LocalForwardPoint = matr.MultiplyPoint(point.Pos + v.normalized * v2.magnitude);
+                point.LocalBackwardPoint = matr.MultiplyPoint(point.Pos - v.normalized * v1.magnitude);
             }
             else
             {
-                point.WorldBackwardPoint = Vector3.Lerp(point.Pos, pointBefore.Pos, 1f / 3f);
-                point.WorldForwardPoint = Vector3.Lerp(point.Pos, pointAfter.Pos, 1f / 3f);
+                point.LocalBackwardPoint = matr.MultiplyPoint(Vector3.Lerp(point.Pos, pointBefore.Pos, 1f / 3f));
+                point.LocalForwardPoint = matr.MultiplyPoint(Vector3.Lerp(point.Pos, pointAfter.Pos, 1f / 3f));
             }
         }
     }
@@ -679,8 +731,9 @@ public class XLinePathSubLine : MonoBehaviour
             Vector3 fwd = point.Pos + v.normalized * v2.magnitude;
             Vector3 bwd = point.Pos - v.normalized * v1.magnitude;
             point.transform.forward = (fwd - point.transform.position).normalized;
-            point.WorldForwardPoint = fwd;
-            point.WorldBackwardPoint = bwd;
+            var matr = point.ThisTransform.worldToLocalMatrix;
+            point.LocalForwardPoint = matr.MultiplyPoint(fwd);
+            point.LocalBackwardPoint = matr.MultiplyPoint(bwd);
             point.isSmooth = true;
         }
     }
@@ -738,9 +791,9 @@ public class XLinePathSubLine : MonoBehaviour
                 pointAfter = _points[i + 1];
             }
             point.isSmooth = false;
-            var worldToLocalMatrix = point.ThisTransform.worldToLocalMatrix;
-            point.WorldBackwardPoint = Vector3.Lerp(point.Pos, pointBefore.Pos, 1f / 3f);
-            point.WorldForwardPoint = Vector3.Lerp(point.Pos, pointAfter.Pos, 1f / 3f);
+            var matr = point.ThisTransform.worldToLocalMatrix;
+            point.LocalBackwardPoint = matr.MultiplyPoint(Vector3.Lerp(point.Pos, pointBefore.Pos, 1f / 3f));
+            point.LocalForwardPoint = matr.MultiplyPoint(Vector3.Lerp(point.Pos, pointAfter.Pos, 1f / 3f));
         }
     }
     public void SetCornerPoints()
@@ -750,7 +803,9 @@ public class XLinePathSubLine : MonoBehaviour
         {
             XLinePathPoint point = _points[i];
             point.isSmooth = false;
-            point.WorldBackwardPoint = point.WorldForwardPoint = point.Pos;
+            //point.WorldBackwardPoint = point.WorldForwardPoint = point.Pos;
+            //point.WorldBackwardPoint = point.WorldForwardPoint = point.Pos;
+            point.SetCorner();
         }
     }
 
@@ -762,6 +817,11 @@ public class XLinePathSubLine : MonoBehaviour
     }
 
     private void OnTransformChildrenChanged()
+    {
+        SetDirty();
+    }
+
+    private void OnTransformParentChanged()
     {
         SetDirty();
     }
@@ -1025,6 +1085,14 @@ public class XLinePathSubLine : MonoBehaviour
         }
     }
 
+    public struct InterpolatedValues
+    {
+        public Vector3 pos;
+        public Vector3 vel;
+        public Vector3 acc;
+        public Vector3 up;
+        public int segmentIndex;
+    }
 }
 
 public class XLinePathSubLines : IEnumerable<XLinePathSubLine>

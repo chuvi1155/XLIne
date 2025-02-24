@@ -1,5 +1,7 @@
 using UnityEngine;
 using System.Collections;
+using static UnityEngine.GraphicsBuffer;
+using UnityEditor;
 
 [AddComponentMenu("Chuvi/Line/XLinePathPoint")]
 public class XLinePathPoint : MonoBehaviour
@@ -25,6 +27,7 @@ public class XLinePathPoint : MonoBehaviour
     }
 
     private bool _isDirty = true;
+    private Vector3 oldPos;
 
     public bool IsDirty
     {
@@ -44,46 +47,57 @@ public class XLinePathPoint : MonoBehaviour
     public Vector3 LocalForwardPoint
     {
         get { return localForwardPoint; }
-        //set
-        //{
-        //    if (localForwardPoint != value)
-        //    {
-        //        IsDirty = true;
-        //        localForwardPoint = value;
-        //        //worldForwardPoint = ThisTransform.localToWorldMatrix.MultiplyPoint(localForwardPoint);
+        set
+        {
+            if (localForwardPoint != value)
+            {
+                IsDirty = true;
+                localForwardPoint = value;
+                worldForwardPoint = ThisTransform.localToWorldMatrix.MultiplyPoint(localForwardPoint);
 
-        //        if (isSmooth)
-        //        {
-        //            float len = localBackwardPoint.magnitude;
-        //            localBackwardPoint = -localForwardPoint.normalized * len;
-        //           // worldBackwardPoint = ThisTransform.localToWorldMatrix.MultiplyPoint(localBackwardPoint);
-        //        }
-        //    }
-        //}
+                if (isSmooth)
+                {
+                    float len = localBackwardPoint.magnitude;
+                    localBackwardPoint = -localForwardPoint.normalized * len;
+                    worldBackwardPoint = ThisTransform.localToWorldMatrix.MultiplyPoint(localBackwardPoint);
+                }
+                oldPos = Pos;
+            }
+        }
     }
     public Vector3 LocalBackwardPoint
     {
         get { return localBackwardPoint; }
-        //set
-        //{
-        //    if (localBackwardPoint != value)
-        //    {
-        //        IsDirty = true;
-        //        localBackwardPoint = value;
-        //        //worldBackwardPoint = ThisTransform.localToWorldMatrix.MultiplyPoint(localBackwardPoint);
+        set
+        {
+            if (localBackwardPoint != value)
+            {
+                IsDirty = true;
+                localBackwardPoint = value;
+                worldBackwardPoint = ThisTransform.localToWorldMatrix.MultiplyPoint(localBackwardPoint);
 
-        //        if (isSmooth)
-        //        {
-        //            float len = localForwardPoint.magnitude;
-        //            localForwardPoint = -localBackwardPoint.normalized * len;
-        //            //worldForwardPoint = ThisTransform.localToWorldMatrix.MultiplyPoint(localForwardPoint);
-        //        }
-        //    }
-        //}
+                if (isSmooth)
+                {
+                    float len = localForwardPoint.magnitude;
+                    localForwardPoint = -localBackwardPoint.normalized * len;
+                    worldForwardPoint = ThisTransform.localToWorldMatrix.MultiplyPoint(localForwardPoint);
+                }
+                oldPos = Pos;
+            }
+        }
     }
     public Vector3 WorldForwardPoint
     {
-        get { return worldForwardPoint; }
+        get 
+        {
+            if(oldPos != Pos)
+            {
+                oldPos = Pos;
+                worldBackwardPoint = ThisTransform.localToWorldMatrix.MultiplyPoint(localBackwardPoint);
+                worldForwardPoint = ThisTransform.localToWorldMatrix.MultiplyPoint(localForwardPoint);
+            }
+            return worldForwardPoint; 
+        }
         set
         {
             if (worldForwardPoint != value)
@@ -98,12 +112,22 @@ public class XLinePathPoint : MonoBehaviour
                     localBackwardPoint = -localForwardPoint.normalized * len;
                     worldBackwardPoint = ThisTransform.localToWorldMatrix.MultiplyPoint(localBackwardPoint);
                 }
+                oldPos = Pos;
             }
         }
     }
     public Vector3 WorldBackwardPoint
     {
-        get { return worldBackwardPoint; }
+        get
+        {
+            if (oldPos != Pos)
+            {
+                oldPos = Pos;
+                worldBackwardPoint = ThisTransform.localToWorldMatrix.MultiplyPoint(localBackwardPoint);
+                worldForwardPoint = ThisTransform.localToWorldMatrix.MultiplyPoint(localForwardPoint);
+            }
+            return worldBackwardPoint; 
+        }
         set
         {
             if (worldBackwardPoint != value)
@@ -118,6 +142,7 @@ public class XLinePathPoint : MonoBehaviour
                     localForwardPoint = -localBackwardPoint.normalized * len;
                     worldForwardPoint = ThisTransform.localToWorldMatrix.MultiplyPoint(localForwardPoint);
                 }
+                oldPos = Pos;
             }
         }
     }
@@ -282,6 +307,39 @@ public class XLinePathPoint : MonoBehaviour
         localBackwardPoint = Vector3.zero;
     }
 
+    public void SetSmoooth()
+    {
+        if(ParentCurve.transform.childCount < 3)
+        {
+            isSmooth = true;
+            return;
+        }
+        int indx = transform.GetSiblingIndex();
+
+        XLinePathPoint pointBefore = ParentCurve.IsClosed ? ParentCurve.transform.GetChild((int)Mathf.Repeat(indx - 1, ParentCurve.transform.childCount)).GetComponent<XLinePathPoint>() :
+            indx - 1 < 0 ? this : ParentCurve.transform.GetChild(indx - 1).GetComponent<XLinePathPoint>();
+        XLinePathPoint pointAfter = ParentCurve.IsClosed ? ParentCurve.transform.GetChild((int)Mathf.Repeat(indx + 1, ParentCurve.transform.childCount)).GetComponent<XLinePathPoint>() :
+            indx + 1 >= ParentCurve.transform.childCount ? this : ParentCurve.transform.GetChild(indx + 1).GetComponent<XLinePathPoint>();
+
+        Vector3 p1 = Vector3.Lerp(Pos, pointBefore.Pos, 1f / 3f);
+        Vector3 p2 = Vector3.Lerp(Pos, pointAfter.Pos, 1f / 3f);
+
+        Vector3 v = p2 - p1;
+        Vector3 v1 = Pos - p1;
+        Vector3 v2 = Pos - p2;
+        var matr = ThisTransform.worldToLocalMatrix;
+        var fwd = Pos + v.normalized * v2.magnitude;
+        var bwd = Pos - v.normalized * v1.magnitude;
+        if (Vector3.Dot(fwd, bwd) > 0.9f)
+            bwd *= -1;
+        localForwardPoint = matr.MultiplyPoint(fwd);
+        localBackwardPoint = matr.MultiplyPoint(bwd);
+        worldForwardPoint = fwd;
+        worldBackwardPoint = bwd;
+        isSmooth = true;
+        IsDirty = true;
+    }
+
     public void ReverseDirections()
     {
         var fwdpt = worldForwardPoint;
@@ -292,6 +350,11 @@ public class XLinePathPoint : MonoBehaviour
         localForwardPoint = ThisTransform.worldToLocalMatrix.MultiplyPoint(worldForwardPoint);
         localBackwardPoint = ThisTransform.worldToLocalMatrix.MultiplyPoint(worldBackwardPoint);
 
+        IsDirty = true;
+    }
+
+    private void OnTransformParentChanged()
+    {
         IsDirty = true;
     }
 

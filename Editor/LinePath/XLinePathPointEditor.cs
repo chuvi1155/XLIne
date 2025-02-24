@@ -34,7 +34,6 @@ public class XLinePathPointEditor : Editor
         if (is2d) EditorGUILayout.LabelField("Local:", point.WorldForwardPoint2D.ToString());
         if (GUI.changed)
         {
-            //point.ForwardPoint = val;
             point.WorldForwardPoint = point.Pos + point.ThisTransform.forward.normalized * len;
             GUI.changed = false;
             EditorUtility.SetDirty(target);
@@ -87,39 +86,37 @@ public class XLinePathPointEditor : Editor
         XLinePathPoint point = (target as XLinePathPoint);
         if (point.ParentCurve == null) return;
         Color col = Handles.color;
-        //if (Event.current.type == EventType.MouseDown)
+
+        if (point.WorldForwardPoint != point.Pos)
         {
-            if (point.WorldForwardPoint != point.Pos)
+            Handles.color = Color.blue;
+            EditorGUI.BeginChangeCheck();
+            var newPos = Handles.FreeMoveHandle(point.WorldForwardPoint, HandleUtility.GetHandleSize(point.WorldForwardPoint) * .1f, Vector3.one, Handles.SphereHandleCap);
+            if (EditorGUI.EndChangeCheck())
             {
-                Handles.color = Color.blue;
-                EditorGUI.BeginChangeCheck();
-                var newPos = Handles.FreeMoveHandle(point.WorldForwardPoint, HandleUtility.GetHandleSize(point.WorldForwardPoint) * .1f, Vector3.one, Handles.SphereHandleCap);
-                if (EditorGUI.EndChangeCheck())
-                {
-                    Undo.RecordObject(point, "Change WorldForwardPoint");
-                    var dir = newPos - point.Pos;
-                    if(point.isSmooth)
-                        point.ThisTransform.forward = dir.normalized;
-                    point.WorldForwardPoint = point.Pos + point.ThisTransform.forward * dir.magnitude;
-                }
-                Handles.color = col;
+                Undo.RecordObject(point, "Change WorldForwardPoint");
+                var dir = newPos - point.Pos;
+                if(point.isSmooth)
+                    point.ThisTransform.forward = dir.normalized;
+                point.WorldForwardPoint = point.Pos + point.ThisTransform.forward * dir.magnitude;
             }
-            if (point.WorldBackwardPoint != point.Pos)
-            {
-                Handles.color = Color.red;
-                EditorGUI.BeginChangeCheck();
-                var newPos = Handles.FreeMoveHandle(point.WorldBackwardPoint, HandleUtility.GetHandleSize(point.WorldBackwardPoint) * .1f, Vector3.one, Handles.SphereHandleCap);
-                if (EditorGUI.EndChangeCheck())
-                {
-                    Undo.RecordObject(point, "Change WorldBackwardPoint");
-                    var dir = newPos - point.Pos;
-                    if (point.isSmooth)
-                        point.ThisTransform.forward = -dir.normalized;
-                    point.WorldBackwardPoint = point.Pos + point.ThisTransform.forward * -dir.magnitude;
-                }
-                Handles.color = col;
-            } 
+            Handles.color = col;
         }
+        if (point.WorldBackwardPoint != point.Pos)
+        {
+            Handles.color = Color.red;
+            EditorGUI.BeginChangeCheck();
+            var newPos = Handles.FreeMoveHandle(point.WorldBackwardPoint, HandleUtility.GetHandleSize(point.WorldBackwardPoint) * .1f, Vector3.one, Handles.SphereHandleCap);
+            if (EditorGUI.EndChangeCheck())
+            {
+                Undo.RecordObject(point, "Change WorldBackwardPoint");
+                var dir = newPos - point.Pos;
+                if (point.isSmooth)
+                    point.ThisTransform.forward = -dir.normalized;
+                point.WorldBackwardPoint = point.Pos + point.ThisTransform.forward * -dir.magnitude;
+            }
+            Handles.color = col;
+        } 
 
 
         Handles.color = Color.green;
@@ -138,6 +135,5 @@ public class XLinePathPointEditor : Editor
         {
             EditorUtility.SetDirty(target);
         }
-        //Repaint();
     }
 }

@@ -305,61 +305,7 @@ public class XLinePathSubLineEditor : Editor
                     XLinePathPoint pointAfter;
                     if (GUILayout.Button("Smooth"))
                     {
-                        if (i > 0)
-                        {
-                            pointBefore = _points[i - 1];
-                            if (i < (_points.Length - 1))
-                            {
-                                pointAfter = _points[i + 1];
-                            }
-                            else
-                            {
-                                if (_target.IsClosed)
-                                {
-                                    pointAfter = _points[0];
-                                }
-                                else
-                                {
-                                    pointAfter = _points[i];
-                                }
-
-                            }
-                        }
-                        else if (i < (_points.Length - 1))
-                        {
-                            pointAfter = _points[i + 1];
-                            if (i > 0)
-                            {
-                                pointBefore = _points[i - 1];
-                            }
-                            else
-                            {
-                                if (_target.IsClosed)
-                                {
-                                    pointBefore = _points[_points.Length - 1];
-                                }
-                                else
-                                {
-                                    pointBefore = _points[i];
-                                }
-
-                            }
-                        }
-                        else
-                        {
-                            pointBefore = _points[i - 1];
-                            pointAfter = _points[i + 1];
-                        }
-
-                        Vector3 p1 = Vector3.Lerp(point.Pos, pointBefore.Pos, 1f / 3f);
-                        Vector3 p2 = Vector3.Lerp(point.Pos, pointAfter.Pos, 1f / 3f);
-
-                        Vector3 v = p2 - p1;
-                        Vector3 v1 = point.Pos - p1;
-                        Vector3 v2 = point.Pos - p2;
-                        point.WorldForwardPoint = point.Pos + v.normalized * v2.magnitude;
-                        point.WorldBackwardPoint = point.Pos - v.normalized * v1.magnitude;
-                        point.isSmooth = true;
+                        point.SetSmoooth();
                         EditorUtility.SetDirty(target);
                         SceneView.RepaintAll();
                     }
@@ -411,8 +357,9 @@ public class XLinePathSubLineEditor : Editor
                             pointAfter = _points[i + 1];
                         }
                         point.isSmooth = false;
-                        point.WorldBackwardPoint = Vector3.Lerp(point.Pos, pointBefore.Pos, 1f / 3f);
-                        point.WorldForwardPoint = Vector3.Lerp(point.Pos, pointAfter.Pos, 1f / 3f);
+                        var matr = point.ThisTransform.worldToLocalMatrix;
+                        point.LocalBackwardPoint = matr.MultiplyPoint(Vector3.Lerp(point.Pos, pointBefore.Pos, 1f / 3f));
+                        point.LocalForwardPoint = matr.MultiplyPoint(Vector3.Lerp(point.Pos, pointAfter.Pos, 1f / 3f));
                         EditorUtility.SetDirty(target);
 
                         SceneView.RepaintAll();

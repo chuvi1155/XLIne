@@ -1,12 +1,12 @@
 using UnityEngine;
 using UnityEditor;
-using System.Collections.Generic;
-using System;
 
 [CustomEditor(typeof(SplineLoft))]
 class LoftEditor : Editor
 {
     SplineLoft loft;
+    int selectedDistort = -1;
+    Plane selectedPlane;
     bool isCleared;
     static string message = "Для того чтобы построить Loft(не знаю как переводится), нужно чтобы:\n" +
                             "1: Изначально было выделенно 2 объекта\n" +
@@ -231,6 +231,131 @@ class LoftEditor : Editor
             loft.Init();
             EditorUtility.SetDirty(loft);
         }
+    }
+
+
+
+    private void OnSceneGUI()
+    {
+        Color col = Handles.color;
+        if (Event.current.type == EventType.MouseDown && Event.current.button == 0 && !Event.current.control && !Event.current.shift)
+        {
+            selectedDistort = -1;
+            Ray ray = HandleUtility.GUIPointToWorldRay(Event.current.mousePosition);
+            for (int i = 0; i < loft.DistortPoints.Length; i++)
+            {
+                var dp = loft.DistortPoints[i];
+                loft.CurvePath.Sublines[dp.subline].GetInterpolatedValues(dp.distance, out Vector3 pos, out Vector3 vel, out Vector3 acc, out Vector3 up);
+                selectedPlane = new Plane(up, pos);
+                if(selectedPlane.Raycast(ray, out var enter))
+                {
+                    var pt = ray.GetPoint(enter);
+                    if(Vector3.Distance(pt, pos) <= dp.scale)
+                    {
+                        selectedDistort = i;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (selectedDistort != -1)
+        {
+            float dist = float.MaxValue;
+            Vector3 pos = Vector3.zero;
+            var dp = loft.DistortPoints[selectedDistort];
+            var sl = loft.CurvePath.Sublines[dp.subline];
+            Ray ray = HandleUtility.GUIPointToWorldRay(Event.current.mousePosition);
+            selectedPlane.Raycast(ray, out var enter);
+            pos = ray.GetPoint(enter);
+            //foreach (var segm in sl.Segments)
+            for (int i1 = 0; i1 < sl.Segments.Length; i1++)
+            {
+                var segm = sl.Segments[i1];
+                var pt1 = segm.Start.Pos;
+                var pt2 = segm.End.Pos;
+                float _dist1 = Vector3.Distance(pos, pt1);
+                if (_dist1 < dist)
+                {
+                    dist = _dist1;
+                    var segm_precission = Mathf.Min(segm.SegmentPartsCount, 12);
+                    var step = 1f / segm_precission;
+                    for (int i = 0; i < segm_precission; i++)
+                    {
+                        var pt = segm.GetPoint(step * i, false);
+                        _dist1 = Vector3.Distance(pos, pt);
+                        if (_dist1 < dist)
+                        {
+                            dist = _dist1;
+                            pos = pt;
+                        }
+                    }
+                }
+            }
+            Handles.DrawWireDisc(pos, selectedPlane.normal, dp.scale, 4f);
+        }
+
+        //HandleUtility.ClosestPointToPolyLine()
+        for (int i = 0; i < loft.DistortPoints.Length; i++)
+        {
+            var dp = loft.DistortPoints[i];
+            loft.CurvePath.Sublines[dp.subline].GetInterpolatedValues(dp.distance, out Vector3 pos, out Vector3 vel, out Vector3 acc, out Vector3 up);
+            
+            if(i == selectedDistort)
+                Handles.color = Color.red;
+            else
+                Handles.color = Color.cyan;
+            Handles.DrawWireDisc(pos, up, dp.scale, 4f);
+
+            if (i == selectedDistort)
+            {
+                EditorGUI.BeginChangeCheck();
+                byte updateType = 0; // 1-position, 2-scale
+                Vector3 newPos = pos;
+                Vector3 scale = Vector3.one * dp.scale;
+                if (Event.current.control)
+                {
+                    newPos = Handles.PositionHandle(pos, Quaternion.LookRotation(vel, up));
+                    updateType = 1;
+                }
+                else if (Event.current.shift)
+                {
+                    scale = Handles.ScaleHandle(scale, pos, Quaternion.LookRotation(vel, up));
+                    updateType = 2;
+                }
+                if (EditorGUI.EndChangeCheck())
+                {
+                    switch (updateType)
+                    {
+                        case 1:
+                            Undo.RecordObject(loft, "Change distort pos");
+                            var dist = newPos - pos;
+                            dp.distance += dist.magnitude * Mathf.Sign(Vector3.Dot(dist, vel));
+                            loft.DistortPoints[i] = dp;
+                            break;
+                        case 2:
+                            Undo.RecordObject(loft, "Change distort scale");
+                            if (scale.x != dp.scale)
+                                dp.scale = scale.x;
+                            else if (scale.y != dp.scale)
+                                dp.scale = scale.y;
+                            else if (scale.z != dp.scale)
+                                dp.scale = scale.z;
+                            loft.DistortPoints[i] = dp;
+                            break;
+                        default:
+                            break;
+                    }
+                    loft.isInitOK = false;
+                    loft.Init();
+                    EditorUtility.SetDirty(loft);
+                } 
+            }
+        }
+        Handles.color = col;
+
+        if(selectedDistort != -1 && Event.current.type != EventType.Layout && Event.current.type != EventType.Repaint)
+            Event.current.Use();
     }
 }
 
