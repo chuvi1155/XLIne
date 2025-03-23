@@ -1,5 +1,6 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEditor;
+using System.Linq;
 
 [CustomEditor(typeof(SplineLoft))]
 class LoftEditor : Editor
@@ -68,10 +69,12 @@ class LoftEditor : Editor
 
 
     SerializedProperty AddCollider;
-    SerializedProperty DestroyOnStart;
+    //SerializedProperty DestroyOnStart;
     SerializedProperty CurveForm;
+    SerializedProperty CapStart;
+    SerializedProperty CapEnd;
     SerializedProperty CurvePath;
-    SerializedProperty mergeSubForms;
+    //SerializedProperty mergeSubForms;
     SerializedProperty material;
     /*SerializedProperty Form2D;*/
     SerializedProperty UseCanvasRenderer;
@@ -103,10 +106,12 @@ class LoftEditor : Editor
     void OnEnable()
     {
         AddCollider = serializedObject.FindProperty("AddCollider");
-        DestroyOnStart = serializedObject.FindProperty("DestroyOnStart");
+        //DestroyOnStart = serializedObject.FindProperty("DestroyOnStart");
         CurveForm = serializedObject.FindProperty("CurveForm");
+        CapStart = serializedObject.FindProperty("CapStart");
+        CapEnd = serializedObject.FindProperty("CapEnd");
         CurvePath = serializedObject.FindProperty("CurvePath");
-        mergeSubForms = serializedObject.FindProperty("mergeSubForms");
+        //mergeSubForms = serializedObject.FindProperty("mergeSubForms");
         material = serializedObject.FindProperty("material");
         /*Form2D = serializedObject.FindProperty("Form2D");*/
         UseCanvasRenderer = serializedObject.FindProperty("UseCanvasRenderer");
@@ -140,7 +145,6 @@ class LoftEditor : Editor
         //EditorGUILayout.PropertyField(DestroyOnStart, new GUIContent("DestroyOnStart"));
 
         EditorGUILayout.BeginVertical("box");
-        EditorGUILayout.PropertyField(CurveForm, new GUIContent("Форма"));
         EditorGUILayout.PropertyField(CurvePath, new GUIContent("Путь"));
         var line = CurvePath.objectReferenceValue as XLinePath;
         if (line != null && line.Sublines != null && line.Sublines.Count > 1)
@@ -153,8 +157,20 @@ class LoftEditor : Editor
                 sublineIndex.intValue = 0;
             EditorGUI.indentLevel--;
         }
+        EditorGUILayout.PropertyField(CurveForm, new GUIContent("Форма"));
+        var line_form = CurveForm.objectReferenceValue as XLinePath;
+        if (line_form != null && line_form.Sublines != null && line_form.Sublines.Count > 0)
+        {
+            if (line_form.Sublines.Any(sl => sl.IsClosed))
+            {
+                EditorGUI.indentLevel++;
+                EditorGUILayout.PropertyField(CapStart, new GUIContent("Закрыть форму в начале"));
+                EditorGUILayout.PropertyField(CapEnd, new GUIContent("Закрыть форму в конце"));
+                EditorGUI.indentLevel--;
+            }
+        }
         //EditorGUILayout.PropertyField(mergeSubForms, new GUIContent("Merge sub-line Forms"));
-
+        EditorGUILayout.Space();
         EditorGUI.indentLevel++;
         EditorGUILayout.PropertyField(material, new GUIContent("Materials"));
         EditorGUI.indentLevel--;

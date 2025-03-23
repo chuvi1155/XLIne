@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using System.Collections;
 using static UnityEngine.GraphicsBuffer;
 using UnityEditor;
@@ -370,8 +370,8 @@ public class XLinePathPoint : MonoBehaviour
         if (!_parentCurve || !((IXLinePath)_parentCurve.Parent).InEditorShowGizmos)
             return;
         Gizmos.color = Color.yellow * 2f;
-        if (!ParentCurve.Force2D) Gizmos.DrawSphere(Pos, 0.4f);
-        else Gizmos.DrawSphere(Pos, 2f);
+        if (!ParentCurve.Force2D) Gizmos.DrawSphere(Pos, 0.1f);
+        else Gizmos.DrawSphere(Pos, 1f);
 
         Gizmos.color = Color.gray;
         Gizmos.DrawLine(WorldForwardPoint, Pos);

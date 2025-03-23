@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 #if UNITY_EDITOR
@@ -9,6 +9,8 @@ using UnityEditor;
 public class SplineLoft : MonoBehaviour
 {
     public XLinePath CurveForm;
+    public bool CapStart;
+    public bool CapEnd;
     public XLinePath CurvePath;
     public List<Material> material = new List<Material>();
     public int PathQuality = 10;
@@ -326,58 +328,58 @@ public class SplineLoft : MonoBehaviour
             if (sl_form.Segments == null || sl_form.Segments.Length == 0)
                 return;
             //for (int i1 = 0; i1 < CurvePath.Sublines.Count; i1++)
+            //{
+            int meshIndx = i * CurvePath.Sublines.Count;// + i1;
+            sl_path.Force2D = Form2D;
+            _mesh[meshIndx] = new Mesh();
+            _mesh[meshIndx].name = "_mesh_combine";
+
+            if (sl_form.Length == 0)
             {
-                int meshIndx = i * CurvePath.Sublines.Count;// + i1;
-                sl_path.Force2D = Form2D;
-                _mesh[meshIndx] = new Mesh();
-                _mesh[meshIndx].name = "_mesh_combine";
-                
-                if (sl_form.Length == 0)
-                {
-                    Debug.LogErrorFormat(sl_form, "Subline: {0}, have zero Length", sl_form.name);
-                    continue;
-                }
-                float stepForm = sl_form.Length / FormQuality;
-                if (stepForm == 0) continue;
-                float[] uvx;
-                // get form points
-                var pointsForm = GetFormPoints(sl_form, stepForm, out uvx, MirrorFormX, MirrorFormY, MirrorFormZ, RotateForm, Scale);
-                if (pointsForm.Length < 2) continue;
-                // get step-segment size
-                float stepPath = sl_path.Length / PathQuality;
-                // move by path and create mesh
-                SetMesh2(_mesh[meshIndx], stepPath, pointsForm, uvx, sublineIndex);
-
-                if (MirrorCopyForm)
-                {
-                    Bounds b = GetBounds(pointsForm);
-                    var copyForm = GetMirrorCopyForm(pointsForm, b.center, mirrorCopyByX, mirrorCopyByY, mirrorCopyByZ);
-                    if (pointsForm.Length < 2) continue;
-                    // move by path and create mesh
-                    var copyMesh = new Mesh();
-                    var inv = InvertFace;
-
-                    InvertFace = (!InvertFace && mirrorCopyByY);
-                    SetMesh2(copyMesh, stepPath, copyForm, uvx, sublineIndex);
-                    InvertFace = inv;
-
-                    CombineInstance[] c_copy = new CombineInstance[2];
-                    c_copy[0] = new CombineInstance();
-                    c_copy[0].mesh = _mesh[meshIndx];
-                    c_copy[1] = new CombineInstance();
-                    c_copy[1].mesh = copyMesh;
-
-                    var m = new Mesh();
-                    m.CombineMeshes(c_copy, true, false);
-                    
-                    DestroyImmediate(_mesh[meshIndx]);
-                    _mesh[meshIndx] = m;
-                }
-
-                // mesh for one subline path
-                combine[meshIndx] = new CombineInstance();
-                combine[meshIndx].mesh = _mesh[meshIndx];
+                Debug.LogErrorFormat(sl_form, "Subline: {0}, have zero Length", sl_form.name);
+                continue;
             }
+            float stepForm = sl_form.Length / FormQuality;
+            if (stepForm == 0) continue;
+            float[] uvx;
+            // get form points
+            var pointsForm = GetFormPoints(sl_form, stepForm, out uvx, MirrorFormX, MirrorFormY, MirrorFormZ, RotateForm, Scale);
+            if (pointsForm.Length < 2) continue;
+            // get step-segment size
+            float stepPath = sl_path.Length / PathQuality;
+            // move by path and create mesh
+            SetMesh2(_mesh[meshIndx], stepPath, pointsForm, uvx, sublineIndex);
+
+            if (MirrorCopyForm)
+            {
+                Bounds b = GetBounds(pointsForm);
+                var copyForm = GetMirrorCopyForm(pointsForm, b.center, mirrorCopyByX, mirrorCopyByY, mirrorCopyByZ);
+                if (pointsForm.Length < 2) continue;
+                // move by path and create mesh
+                var copyMesh = new Mesh();
+                var inv = InvertFace;
+
+                InvertFace = (!InvertFace && mirrorCopyByY);
+                SetMesh2(copyMesh, stepPath, copyForm, uvx, sublineIndex);
+                InvertFace = inv;
+
+                CombineInstance[] c_copy = new CombineInstance[2];
+                c_copy[0] = new CombineInstance();
+                c_copy[0].mesh = _mesh[meshIndx];
+                c_copy[1] = new CombineInstance();
+                c_copy[1].mesh = copyMesh;
+
+                var m = new Mesh();
+                m.CombineMeshes(c_copy, true, false);
+
+                DestroyImmediate(_mesh[meshIndx]);
+                _mesh[meshIndx] = m;
+            }
+
+            // mesh for one subline path
+            combine[meshIndx] = new CombineInstance();
+            combine[meshIndx].mesh = _mesh[meshIndx];
+            //}
         }
         List<CombineInstance> list = new List<CombineInstance>(combine);
         list.RemoveAll(val => val.mesh == null);
@@ -455,11 +457,12 @@ public class SplineLoft : MonoBehaviour
             }
         }
 
-        Vector3[] verts = new Vector3[PathQuality * (pointsForm.Length - 1) * 4];
+        int capCount = (CapStart ? pointsForm.Length : 0) + (CapEnd ? pointsForm.Length : 0);
+        Vector3[] verts = new Vector3[PathQuality * (pointsForm.Length - 1) * 4 + capCount];
         List<int>[][] normals = new List<int>[PathQuality + 1][];
         Vector2[] uvs = new Vector2[verts.Length];
         Vector2[] uvs1 = new Vector2[verts.Length];
-        int[] indx = new int[(verts.Length / 2) * 3];
+        int[] indx = new int[((verts.Length - capCount) / 2) * 3];
         int v = 0, tri = 0;
         for (int i = 0; i < PathQuality; i++)
         {
@@ -473,14 +476,10 @@ public class SplineLoft : MonoBehaviour
 
             for (int n = 0; n < pointsForm.Length - 1; n++)
             {
-
-                //verts.AddRange(new Vector3[]
-                //{
                 verts[v] = formFrameVerts[i][n];//,
                 verts[v + 1] = formFrameVerts[i][n + 1];//,
                 verts[v + 2] = formFrameVerts[i + 1][n + 1];//,
                 verts[v + 3] = formFrameVerts[i + 1][n];
-                //});
 
                 if (IsSmooth)
                 {
@@ -546,6 +545,49 @@ public class SplineLoft : MonoBehaviour
                 v += 4;
             }
         }
+
+        Triangulator triang = null;
+        int[] indexes = null;
+        if (CapStart)
+        {
+            triang = new Triangulator(pointsForm);
+            indexes = triang.Triangulate();
+            int indx_len = indx.Length;
+            System.Array.Resize(ref indx, indx.Length + indexes.Length);
+            int startIndex_vert = CapEnd ? (verts.Length - pointsForm.Length - pointsForm.Length) : (verts.Length - pointsForm.Length);
+            int startIndex_tri = indx_len;//CapEnd ? (indx.Length - 6 - 6) : (indx.Length - 6);
+            for (int i = 0; i < indexes.Length; i++)
+                indx[i + startIndex_tri] = indexes[InvertFace ? indexes.Length - i - 1 : i] + startIndex_vert;
+            for (int i = 0; i < pointsForm.Length; i++)
+            {
+                verts[i + startIndex_vert] = formFrameVerts[0][i];
+                // тут не так должно быть, надо делать отдельную развертку для закрываюших поверхностей
+                uvs[i + startIndex_vert] = uvs[i];
+                uvs1[i + startIndex_vert] = uvs1[i];
+            }
+        }
+        if (CapEnd)
+        {
+            if (triang == null)
+            {
+                triang = new Triangulator(pointsForm);
+                indexes = triang.Triangulate();
+            }
+            int indx_len = indx.Length;
+            System.Array.Resize(ref indx, indx.Length + indexes.Length);
+            int startIndex_vert = verts.Length - pointsForm.Length;
+            int startIndex_tri = indx_len;//indx.Length - 6;
+            for (int i = 0; i < indexes.Length; i++)
+                indx[i + startIndex_tri] = indexes[InvertFace ? i : indexes.Length - i - 1] + startIndex_vert;
+            for (int i = 0; i < pointsForm.Length; i++)
+            {
+                verts[i + startIndex_vert] = formFrameVerts[PathQuality][i];
+                // тут не так должно быть, надо делать отдельную развертку для закрываюших поверхностей
+                uvs[i + startIndex_vert] = uvs[i];
+                uvs1[i + startIndex_vert] = uvs1[i];
+            }
+        }
+
 
         res.SetVertices(verts);
         res.SetUVs(0, uvs);
