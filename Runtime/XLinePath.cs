@@ -170,4 +170,9 @@ public class XLinePath : MonoBehaviour, IXLinePath
         }
         isDirty = true;
     }
+    public float GetLength(int sublineIndex)
+    {
+        return Sublines[sublineIndex].Length;
+    }
 }
+
